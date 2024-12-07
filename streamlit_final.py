@@ -29,7 +29,7 @@ st.markdown(
 def load_data():
     try:
         # Load your datasets
-        final_integrated_df_cleaned = pd.read_csv("final_integrated_df_cleaned.csv")
+        final_integrated_df_cleaned = pd.read_csv("final_integrated_dataset.csv")
         return final_integrated_df_cleaned
     except FileNotFoundError as e:
         st.error(f"Error: {e}. Please ensure the CSV file is in the correct directory.")
