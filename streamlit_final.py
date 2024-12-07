@@ -15,87 +15,12 @@ st.set_page_config(
     layout="wide"
 )
 
-def show_introduction_content():
-    st.title("🚗 Car Insurance Risk Predictor")
-    
-    # Project overview section
-    st.header("Project Overview")
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        st.write("""
-        This project focuses on developing a sophisticated risk prediction system 
-        for car insurance claims by analyzing three key aspects:
-        
-        1. **Insurance Claims Analysis**: Understanding patterns in insurance claims
-        2. **Vehicle Safety Assessment**: Evaluating safety features and their impact
-        3. **Maintenance Pattern Study**: Analyzing how maintenance affects risk
-        """)
-    
-    with col2:
-        st.image("Imageof-Auto-Insurance.jpg", caption="Car Insurance Analytics")
-
-    # Data Sources
-    st.header("Data Sources and Integration")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown("""
-        ### 1. Insurance Claims Data
-        **Source**: [Car Insurance Claim Data](https://www.kaggle.com/datasets/xiaomengsun/car-insurance-claim-data)
-        
-        **Contains**:
-        - Customer demographics
-        - Claims history
-        - Policy details
-        - Risk indicators
-        """)
-
-    with col2:
-        st.markdown("""
-        ### 2. Vehicle Specifications
-        **Source**: [Car Insurance Claim Prediction](https://www.kaggle.com/datasets/ifteshanajnin/carinsuranceclaimprediction-classification?select=train.csv)
-        
-        **Contains**:
-        - Technical specifications
-        - Safety features
-        - Vehicle characteristics
-        - Performance metrics
-        """)
-
-    with col3:
-        st.markdown("""
-        ### 3. Maintenance Records
-        **Source**: [Vehicle Maintenance Data](https://www.kaggle.com/datasets/chavindudulaj/vehicle-maintenance-data)
-        
-        **Contains**:
-        - Service history
-        - Maintenance patterns
-        - Repair records
-        - Vehicle condition metrics
-        """)
-
-    # Integration Process
-    st.header("Data Integration Process")
-    st.markdown("""
-    Our comprehensive approach includes:
-    - Data merging using common identifiers
-    - Handling missing values and duplicates
-    - Feature engineering from multiple sources
-    - Quality checks and validation
-    
-    This enables analysis of:
-    - ✅ Risk factors from multiple perspectives
-    - ✅ Relationships between vehicle features and claims
-    - ✅ Impact of maintenance on insurance risk
-    """)
-
-# Load data (cached)
+# Utility function to load data (cached)
 @st.cache_data
 def load_data():
     try:
-        final_integrated_df_cleaned = pd.read_csv("final_integrated_dataset.csv")
-        return final_integrated_df_cleaned
+        df = pd.read_csv("final_integrated_dataset.csv")
+        return df
     except FileNotFoundError as e:
         st.error(f"Error: {e}. Please ensure the CSV file is in the correct directory.")
         return None
@@ -103,71 +28,129 @@ def load_data():
 # Load the data
 df = load_data()
 
-
-# Initially show the introduction content
-show_introduction_content()
-
-# Space selection in sidebar
+# --- TOP-LEVEL NAVIGATION ---
 st.sidebar.title("TechImpact Solutions")
 selected_space = st.sidebar.selectbox(
-    "Select Space",
-    ["Select Space", "Production Space", "Data Science Space"]
+    "Select Top-Level Space",
+    ["Home", "Data Science Space", "Production Space"]
 )
 
-# Main content logic
-if selected_space == "Select Space":
-    # Only show introduction when no space is selected
-    show_introduction_content()
-
-elif selected_space == "Data Science Space":
-    # Data Science Space navigation
-    selected_page = st.sidebar.selectbox(
-        "Select Page",
-        ["Introduction",
-         "Data Overview",
-         "Data Statistics",
-         "Data Merging & Missingness",
-         "EDA",
-         "Correlation Analysis",
-         "Category Analysis"]
+# --- SPACE-SPECIFIC NAVIGATION ---
+selected_page = None
+if selected_space == "Data Science Space":
+    selected_page = st.sidebar.radio(
+        "Navigate Data Science Space",
+        ["Data Overview", "Data Statistics", "Data Merging & Missingness", 
+         "EDA", "Correlation Analysis", "Category Analysis"]
     )
-    
-    # Show content based on selected page
-    if selected_page == "Introduction":
-        show_introduction_content()
-        
-    elif selected_page == "Data Overview":
-        st.title("Data Overview")
-        st.header("Dataset Description")
-        if df is not None:
-            st.dataframe(df.head())
-            st.write(f"Dataset Shape: {df.shape}")
-            
-    elif selected_page == "Data Statistics":
-        st.title("Data Statistics")
-        if df is not None:
-            numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
-            st.header("Numeric Features Statistics")
-            st.dataframe(df[numeric_cols].describe())
-            
-    elif selected_page == "Data Merging & Missingness":
-        st.title("Data Merging and Missingness Analysis")
-        if df is not None:
-            missing = df.isnull().sum()
-            st.write("Missing Values Summary:")
-            st.write(missing[missing > 0])
-
 elif selected_space == "Production Space":
-    # Production Space navigation
-    selected_page = st.sidebar.selectbox(
-        "Select Page",
-        ["Risk Assessment",
-         "Vehicle Comparison",
-         "Maintenance Predictor",
-         "Insurance Calculator"]
+    selected_page = st.sidebar.radio(
+        "Navigate Production Space",
+        ["Risk Assessment", "Vehicle Comparison", "Maintenance Predictor", "Insurance Calculator"]
     )
-    st.info("Production Space features are under development.")
+
+# --- HOME PAGE ---
+def show_home_page():
+    st.title("🚗 Car Insurance Risk Predictor")
+    st.header("Welcome to TechImpact Solutions")
+    st.write("""
+    Explore comprehensive tools for analyzing and predicting car insurance risks. 
+    Select a space from the dropdown menu to begin:
+    - **Data Science Space**: Dive into data analysis and visualization.
+    - **Production Space**: Access tools for risk assessment and predictions.
+    """)
+
+# --- DATA SCIENCE SPACE PAGES ---
+def show_data_overview():
+    st.title("Data Overview")
+    if df is not None:
+        st.write("### Dataset Snapshot:")
+        st.dataframe(df.head())
+        st.write(f"**Dataset Shape**: {df.shape}")
+    else:
+        st.error("Data not loaded. Please check the source file.")
+
+def show_data_statistics():
+    st.title("Data Statistics")
+    if df is not None:
+        numeric_cols = df.select_dtypes(include=["float64", "int64"]).columns
+        st.write("### Descriptive Statistics for Numeric Features:")
+        st.dataframe(df[numeric_cols].describe())
+    else:
+        st.error("Data not loaded. Please check the source file.")
+
+def show_missingness_analysis():
+    st.title("Data Merging & Missingness")
+    if df is not None:
+        st.write("### Missing Values Summary:")
+        missing = df.isnull().sum()
+        missing = missing[missing > 0]
+        if not missing.empty:
+            st.write(missing)
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(df.isnull(), cbar=False, cmap="viridis")
+            st.pyplot(fig)
+        else:
+            st.success("No missing values found in the dataset!")
+    else:
+        st.error("Data not loaded. Please check the source file.")
+
+# Placeholder functions for additional pages
+def show_eda():
+    st.title("Exploratory Data Analysis")
+    st.write("EDA content coming soon!")
+
+def show_correlation_analysis():
+    st.title("Correlation Analysis")
+    st.write("Correlation analysis content coming soon!")
+
+def show_category_analysis():
+    st.title("Category Analysis")
+    st.write("Category analysis content coming soon!")
+
+# --- PRODUCTION SPACE PAGES ---
+def show_risk_assessment():
+    st.title("Risk Assessment")
+    st.write("Risk assessment tools coming soon!")
+
+def show_vehicle_comparison():
+    st.title("Vehicle Comparison")
+    st.write("Vehicle comparison tools coming soon!")
+
+def show_maintenance_predictor():
+    st.title("Maintenance Predictor")
+    st.write("Maintenance prediction tools coming soon!")
+
+def show_insurance_calculator():
+    st.title("Insurance Calculator")
+    st.write("Insurance calculator tools coming soon!")
+
+# --- MAIN PAGE LOGIC ---
+if selected_space == "Home":
+    show_home_page()
+elif selected_space == "Data Science Space":
+    if selected_page == "Data Overview":
+        show_data_overview()
+    elif selected_page == "Data Statistics":
+        show_data_statistics()
+    elif selected_page == "Data Merging & Missingness":
+        show_missingness_analysis()
+    elif selected_page == "EDA":
+        show_eda()
+    elif selected_page == "Correlation Analysis":
+        show_correlation_analysis()
+    elif selected_page == "Category Analysis":
+        show_category_analysis()
+elif selected_space == "Production Space":
+    if selected_page == "Risk Assessment":
+        show_risk_assessment()
+    elif selected_page == "Vehicle Comparison":
+        show_vehicle_comparison()
+    elif selected_page == "Maintenance Predictor":
+        show_maintenance_predictor()
+    elif selected_page == "Insurance Calculator":
+        show_insurance_calculator()
 
 # Stop if data loading failed
-if df is None:
+if df is None and selected_space != "Home":
     st.stop()
