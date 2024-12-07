@@ -28,6 +28,9 @@ def load_dataset(file_path):
 car_insurance_claim = load_dataset("car_insurance_claim.csv")
 vehicle_features_data = load_dataset("Vehicle features data.csv")
 vehicle_maintenance_data = load_dataset("vehicle_maintenance_data.csv")
+insurance_clean = load_dataset("insurance_clean.csv")
+features_clean = load_dataset("features_clean.csv")
+maintenance_clean = load_dataset("maintenance_clean.csv")
 
 # Load merged dataset
 merged_dataset = load_dataset("final_integrated_dataset.csv")
@@ -54,7 +57,7 @@ selected_page = None
 if selected_space == "Data Science Space":
     selected_page = st.sidebar.radio(
         "Navigate Data Science Space",
-        ["Data Overview", "Data Statistics", "Data Merging & Missingness", 
+        ["Data Overview", "Data Statistics","Data Cleaning", "Data Merging & Missingness", 
          "EDA", "Correlation Analysis", "Category Analysis"]
     )
 elif selected_space == "Production Space":
@@ -307,6 +310,107 @@ def show_data_statistics():
     else:
         st.error("Data not loaded. Please check the source file.")
 
+def show_data_cleaning_steps():
+    st.title("Data Cleaning Steps")
+    
+    # Dropdown for dataset selection
+    dataset_option = st.selectbox("Select Dataset", ["Car Insurance Claims", "Vehicle Features Data", 
+                                                   "Vehicle Maintenance Data", "Merged Dataset"])
+    
+    # Show the cleaning steps for the corresponding dataset
+    if dataset_option == "Car Insurance Claims":
+        st.write("""
+        ### Car Insurance Claims Data Cleaning Steps:
+        
+        1. **Remove Duplicates**:
+            - Duplicates were removed to ensure unique entries in the dataset.
+        
+        2. **Clean Monetary Columns**:
+            - The `INCOME`, `HOME_VAL`, `BLUEBOOK`, `OLDCLAIM`, and `CLM_AMT` columns were cleaned by removing dollar signs (`$`) and commas, and then converting the values to numeric types.
+        
+        3. **Convert `BIRTH` to Datetime**:
+            - The `BIRTH` column was converted into a proper datetime format (`%d%b%y`).
+        
+        4. **Remove `z_` Prefix in Categorical Variables**:
+            - Categorical variables such as `MSTATUS`, `GENDER`, `CAR_TYPE`, `URBANICITY` had the `z_` prefix removed to standardize the data.
+        
+        5. **Standardize Binary Columns**:
+            - Columns such as `PARENT1`, `RED_CAR`, and `REVOKED` were mapped to binary values (`1` for `Yes` and `0` for `No`).
+        """)
+        
+        # Example of data (if loaded)
+        st.write("### Cleaned Data Sample:")
+        st.write(insurance_clean.head())  # Assuming `insurance_clean` is already loaded
+
+    elif dataset_option == "Vehicle Features Data":
+        st.write("""
+        ### Vehicle Features Data Cleaning Steps:
+        
+        1. **Convert Yes/No Columns to Binary**:
+            - Columns like `is_esc`, `is_tpms`, `is_parking_sensors`, etc., were converted to `1` for `Yes` and `0` for `No`.
+        
+        2. **Clean `area_cluster` Column**:
+            - Removed extra spaces from the `area_cluster` column to ensure consistent formatting.
+        
+        3. **Standardize Categorical Columns**:
+            - Categorical columns like `fuel_type`, `segment`, `model`, `engine_type`, etc., were stripped of leading/trailing spaces to standardize the data.
+        
+        4. **Ensure `policy_id` is a String**:
+            - The `policy_id` column was converted to a string type to ensure uniformity.
+        
+        5. **Ensure Numeric Columns are Properly Typed**:
+            - Columns like `policy_tenure`, `age_of_car`, and `age_of_policyholder` were converted to numeric types.
+        """)
+        
+        # Example of data (if loaded)
+        st.write("### Cleaned Data Sample:")
+        st.write(features_clean.head())  # Assuming `features_clean` is already loaded
+
+    elif dataset_option == "Vehicle Maintenance Data":
+        st.write("""
+        ### Vehicle Maintenance Data Cleaning Steps:
+        
+        1. **Convert Date Columns to Datetime**:
+            - The `Last_Service_Date` and `Warranty_Expiry_Date` columns were converted into proper datetime format.
+        
+        2. **Standardize Categorical Columns**:
+            - The `Vehicle_Model`, `Fuel_Type`, and `Transmission_Type` columns were stripped of spaces to ensure uniformity.
+        
+        3. **Encode Categorical Columns**:
+            - Categorical columns like `Maintenance_History`, `Owner_Type`, `Tire_Condition`, and `Brake_Condition` were encoded with numerical codes.
+        
+        4. **Battery Status**:
+            - The `Battery_Status` column was mapped to `0` for `Weak` and `1` for `New`.
+        
+        5. **Ensure Numeric Columns are Properly Typed**:
+            - Columns like `Mileage`, `Reported_Issues`, `Vehicle_Age`, etc., were converted to numeric types.
+        """)
+        
+        # Example of data (if loaded)
+        st.write("### Cleaned Data Sample:")
+        st.write(maintenance_clean.head())  # Assuming `maintenance_clean` is already loaded
+
+    else:  # Merged Dataset
+        st.write("""
+        ### Merged Dataset Data Cleaning Steps:
+        
+        1. **Merge Multiple Datasets**:
+            - The `Car Insurance Claims`, `Vehicle Features`, and `Vehicle Maintenance` datasets were merged on the `policy_id` column to create a unified dataset.
+        
+        2. **Handle Missing Values**:
+            - Missing values in critical columns were filled with appropriate values or dropped based on the significance of the column.
+        
+        3. **Remove Outliers**:
+            - Extreme values that seemed unrealistic were identified and removed.
+        
+        4. **Standardize Categorical Variables**:
+            - Categorical variables across the merged dataset were standardized to ensure uniformity in representation.
+        """)
+        
+        # Example of data (if loaded)
+        st.write("### Cleaned Data Sample:")
+        st.write(merged_dataset.head()
+
 def show_missingness_analysis():
     st.title("Data Merging & Missingness")
     if df is not None:
@@ -361,6 +465,8 @@ elif selected_space == "Data Science Space":
         show_data_overview()
     elif selected_page == "Data Statistics":
         show_data_statistics()
+    elif selected_page == "Data Cleaning":
+        show_data_cleaning_steps()
     elif selected_page == "Data Merging & Missingness":
         show_missingness_analysis()
     elif selected_page == "EDA":
