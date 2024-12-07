@@ -409,7 +409,7 @@ def show_data_cleaning_steps():
         
         # Example of data (if loaded)
         st.write("### Cleaned Data Sample:")
-        st.write(merged_dataset.head()
+        st.write(merged_dataset.head())
 
 def show_missingness_analysis():
     st.title("Data Merging & Missingness")
