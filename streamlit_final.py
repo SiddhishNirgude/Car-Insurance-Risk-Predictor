@@ -114,8 +114,13 @@ selected_space = st.sidebar.selectbox(
     ["Select Space", "Production Space", "Data Science Space"]
 )
 
-# Second level navigation based on selected space
-if selected_space == "Data Science Space":
+# Main content logic
+if selected_space == "Select Space":
+    # Only show introduction when no space is selected
+    show_introduction_content()
+
+elif selected_space == "Data Science Space":
+    # Data Science Space navigation
     selected_page = st.sidebar.selectbox(
         "Select Page",
         ["Introduction",
@@ -126,9 +131,6 @@ if selected_space == "Data Science Space":
          "Correlation Analysis",
          "Category Analysis"]
     )
-    
-    # Clear the main area before showing new content
-    st.empty()
     
     # Show content based on selected page
     if selected_page == "Introduction":
@@ -154,10 +156,9 @@ if selected_space == "Data Science Space":
             missing = df.isnull().sum()
             st.write("Missing Values Summary:")
             st.write(missing[missing > 0])
-            
-    # Add other pages as needed
 
 elif selected_space == "Production Space":
+    # Production Space navigation
     selected_page = st.sidebar.selectbox(
         "Select Page",
         ["Risk Assessment",
@@ -165,9 +166,6 @@ elif selected_space == "Production Space":
          "Maintenance Predictor",
          "Insurance Calculator"]
     )
-    
-    # Clear the main area
-    st.empty()
     st.info("Production Space features are under development.")
 
 # Stop if data loading failed
