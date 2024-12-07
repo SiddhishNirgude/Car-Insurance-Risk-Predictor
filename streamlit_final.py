@@ -172,7 +172,7 @@ def show_data_overview():
 
         # Display column definition or description (you can customize this dictionary)
         column_definitions = {
-            'Age': 'Age of the insured individual.',
+            'AGE': 'Age of the insured individual.',
             'Policy Type': 'Type of the insurance policy (e.g., Full Coverage, Liability).',
             'Claim Amount': 'Amount claimed by the insured individual for the incident.',
             # Add other columns here with their definitions...
