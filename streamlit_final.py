@@ -464,8 +464,9 @@ def show_missingness_analysis():
             - **K-Nearest Neighbors (KNN) Imputation**: Utilized for numerical features such as `YOJ`, `INCOME`, `HOME_VAL`, and `CAR_AGE`, imputing missing values based on similarities in other data points.
         3. **Rechecked Missingness**: Verified after imputation that all missing values were addressed, ensuring no residual missingness.
         """
-    elif dataset_option == "Vehicle Features":
-        df_before = features_before_imputation
+    elif dataset_option == "Vehicle Features Data":
+        df_before = vehicle_features_data
+        df_induced = features_induced_missing
         df_after = features_after_imputation
         imputation_steps = """
         1. **Induced Missingness**: Introduced artificial missingness in selected columns (`age_of_car`, `age_of_policyholder`, `population_density`, `displacement`, `turning_radius`, `make`, `segment`, `fuel_type`) to simulate real-world scenarios.
