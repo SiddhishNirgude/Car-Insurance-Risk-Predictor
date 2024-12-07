@@ -28,7 +28,7 @@ def load_dataset(file_path, dataset_name):
 
 # Load datasets
 car_insurance_claim = load_dataset("car_insurance_claim.csv", "Car Insurance Claims Data")
-vehicle_features_data = load_dataset("vehicle features data.csv", "Vehicle Features Data")
+vehicle_features_data = load_dataset("Vehicle features data.csv", "Vehicle Features Data")
 vehicle_maintenance_data = load_dataset("vehicle_maintenance_data.csv", "Vehicle Maintenance Data")
 
 # Display a success message if all datasets are loaded successfully
