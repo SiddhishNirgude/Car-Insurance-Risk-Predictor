@@ -52,13 +52,79 @@ elif selected_space == "Production Space":
 # --- HOME PAGE ---
 def show_home_page():
     st.title("🚗 Car Insurance Risk Predictor")
-    st.header("Welcome to TechImpact Solutions")
-    st.write("""
-    Explore comprehensive tools for analyzing and predicting car insurance risks. 
-    Select a space from the dropdown menu to begin:
-    - **Data Science Space**: Dive into data analysis and visualization.
-    - **Production Space**: Access tools for risk assessment and predictions.
+    
+    # Project overview section
+    st.header("Project Overview")
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.write("""
+        This project focuses on developing a sophisticated risk prediction system 
+        for car insurance claims by analyzing three key aspects:
+        
+        1. **Insurance Claims Analysis**: Understanding patterns in insurance claims
+        2. **Vehicle Safety Assessment**: Evaluating safety features and their impact
+        3. **Maintenance Pattern Study**: Analyzing how maintenance affects risk
+        """)
+    
+    with col2:
+        st.image("Imageof-Auto-Insurance.jpg", caption="Car Insurance Analytics")
+
+    # Data Sources
+    st.header("Data Sources and Integration")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("""
+        ### 1. Insurance Claims Data
+        **Source**: [Car Insurance Claim Data](https://www.kaggle.com/datasets/xiaomengsun/car-insurance-claim-data)
+        
+        **Contains**:
+        - Customer demographics
+        - Claims history
+        - Policy details
+        - Risk indicators
+        """)
+
+    with col2:
+        st.markdown("""
+        ### 2. Vehicle Specifications
+        **Source**: [Car Insurance Claim Prediction](https://www.kaggle.com/datasets/ifteshanajnin/carinsuranceclaimprediction-classification?select=train.csv)
+        
+        **Contains**:
+        - Technical specifications
+        - Safety features
+        - Vehicle characteristics
+        - Performance metrics
+        """)
+
+    with col3:
+        st.markdown("""
+        ### 3. Maintenance Records
+        **Source**: [Vehicle Maintenance Data](https://www.kaggle.com/datasets/chavindudulaj/vehicle-maintenance-data)
+        
+        **Contains**:
+        - Service history
+        - Maintenance patterns
+        - Repair records
+        - Vehicle condition metrics
+        """)
+
+    # Integration Process
+    st.header("Data Integration Process")
+    st.markdown("""
+    Our comprehensive approach includes:
+    - Data merging using common identifiers
+    - Handling missing values and duplicates
+    - Feature engineering from multiple sources
+    - Quality checks and validation
+    
+    This enables analysis of:
+    - ✅ Risk factors from multiple perspectives
+    - ✅ Relationships between vehicle features and claims
+    - ✅ Impact of maintenance on insurance risk
     """)
+
 
 # --- DATA SCIENCE SPACE PAGES ---
 def show_data_overview():
