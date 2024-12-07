@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+from sklearn.impute import KNNImputer  # Use this instead of importing KNNImputer directly
 
 # Page configuration
 st.set_page_config(
