@@ -454,16 +454,16 @@ def show_missingness_analysis():
     # Map the selection to datasets
 
     if dataset_option == "Car Insurance Claims":
-    df_before = insurance_clean
-    df_after = insurance_after_imputation
-    imputation_steps = """
-    1. **Identified Missing Values**: Focused on missing values in `AGE`, `OCCUPATION`, and key numerical features like `YOJ`, `INCOME`, `HOME_VAL`, and `CAR_AGE`.
-    2. **Imputation Strategies**:
-        - **Median Imputation**: Used for `AGE`, as it minimizes distortion caused by outliers.
-        - **Mode Imputation**: Applied to `OCCUPATION`, replacing missing values with the most frequent category.
-        - **K-Nearest Neighbors (KNN) Imputation**: Utilized for numerical features such as `YOJ`, `INCOME`, `HOME_VAL`, and `CAR_AGE`, imputing missing values based on similarities in other data points.
-    3. **Rechecked Missingness**: Verified after imputation that all missing values were addressed, ensuring no residual missingness.
-    """
+        df_before = insurance_clean
+        df_after = insurance_after_imputation
+        imputation_steps = """
+        1. **Identified Missing Values**: Focused on missing values in `AGE`, `OCCUPATION`, and key numerical features like `YOJ`, `INCOME`, `HOME_VAL`, and `CAR_AGE`.
+        2. **Imputation Strategies**:
+            - **Median Imputation**: Used for `AGE`, as it minimizes distortion caused by outliers.
+            - **Mode Imputation**: Applied to `OCCUPATION`, replacing missing values with the most frequent category.
+            - **K-Nearest Neighbors (KNN) Imputation**: Utilized for numerical features such as `YOJ`, `INCOME`, `HOME_VAL`, and `CAR_AGE`, imputing missing values based on similarities in other data points.
+        3. **Rechecked Missingness**: Verified after imputation that all missing values were addressed, ensuring no residual missingness.
+        """
     elif dataset_option == "Vehicle Features Data":
         df_before = vehicle_features_data
         df_induced = features_induced_missing
