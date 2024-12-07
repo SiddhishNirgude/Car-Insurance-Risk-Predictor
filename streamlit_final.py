@@ -15,18 +15,39 @@ st.set_page_config(
     layout="wide"
 )
 
-# Utility function to load data (cached)
+# Utility function to load a dataset (cached)
 @st.cache_data
-def load_data():
+def load_dataset(file_path, dataset_name):
     try:
-        df = pd.read_csv("final_integrated_dataset.csv")
-        return df
+        data = pd.read_csv(file_path)
+        st.success(f"{dataset_name} loaded successfully!")
+        return data
     except FileNotFoundError as e:
-        st.error(f"Error: {e}. Please ensure the CSV file is in the correct directory.")
+        st.error(f"Error: {e}. Please ensure the file {file_path} is in the correct directory.")
         return None
 
-# Load the data
-df = load_data()
+# Load datasets
+car_insurance_claim = load_dataset("car_insurance_claim.csv", "Car Insurance Claims Data")
+vehicle_features_data = load_dataset("vehicle features data.csv", "Vehicle Features Data")
+vehicle_maintenance_data = load_dataset("vehicle_maintenance_data.csv", "Vehicle Maintenance Data")
+
+# Display a success message if all datasets are loaded successfully
+if car_insurance_claim is not None and vehicle_features_data is not None and vehicle_maintenance_data is not None:
+    st.success("All datasets loaded successfully!")
+
+# Add a note about merged dataset
+@st.cache_data
+def load_merged_dataset():
+    try:
+        merged_data = pd.read_csv("final_integrated_dataset.csv")
+        st.success("Merged dataset loaded successfully!")
+        return merged_data
+    except FileNotFoundError as e:
+        st.error(f"Error: {e}. Please ensure the merged dataset file is in the correct directory.")
+        return None
+
+# Load the merged dataset
+merged_dataset = load_merged_dataset()
 
 # --- TOP-LEVEL NAVIGATION ---
 st.sidebar.title("TechImpact Solutions")
