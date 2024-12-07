@@ -276,7 +276,31 @@ def show_data_overview():
 
 def show_data_statistics():
     st.title("Data Statistics")
+    
+    # Dropdown for dataset selection
+    dataset_option = st.selectbox("Select Dataset", ["Car Insurance Claims", "Vehicle Features Data", 
+                                                   "Vehicle Maintenance Data", "Merged Dataset"])
+    
+    # Load the corresponding dataset based on the selection
+    if dataset_option == "Car Insurance Claims":
+        df = car_insurance_claim
+    elif dataset_option == "Vehicle Features Data":
+        df = vehicle_features_data
+    elif dataset_option == "Vehicle Maintenance Data":
+        df = vehicle_maintenance_data
+    else:  # Merged Dataset
+        df = merged_dataset
+
     if df is not None:
+        # Show the dataset table
+        st.write("### Data Table:")
+        st.dataframe(df)
+        
+        # Show the data types table
+        st.write("### Data Types:")
+        st.dataframe(df.dtypes)
+        
+        # Show descriptive statistics for numeric features
         numeric_cols = df.select_dtypes(include=["float64", "int64"]).columns
         st.write("### Descriptive Statistics for Numeric Features:")
         st.dataframe(df[numeric_cols].describe())
