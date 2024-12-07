@@ -32,6 +32,9 @@ vehicle_maintenance_data = load_dataset("vehicle_maintenance_data.csv")
 insurance_clean = load_dataset("insurance_clean.csv")
 features_clean = load_dataset("features_clean.csv")
 maintenance_clean = load_dataset("maintenance_clean.csv")
+insurance_after_imputation = load_dataset("insurance_after_imputation.csv")
+features_after_imputation = load_dataset("features_after_imputation.csv")
+maintenance_after_imputation = load_dataset("maintenance_after_imputation.csv")
 merged_dataset = load_dataset("final_integrated_dataset.csv")
 
 # Check for dataset loading errors and show relevant messages
@@ -47,6 +50,12 @@ if features_clean is None:
     st.error("Error: Cleaned Vehicle Features Data could not be loaded. Please check the file path.")
 if maintenance_clean is None:
     st.error("Error: Cleaned Vehicle Maintenance Data could not be loaded. Please check the file path.")
+if insurance_after_imputation is None:
+    st.error("Error: After Imputation Car Insurance Claims Data could not be loaded. Please check the file path.")
+if features_after_imputation is None:
+    st.error("Error: After Imputation Vehicle Features Data could not be loaded. Please check the file path.")
+if maintenance_after_imputation is None:
+    st.error("Error: After Imputation Vehicle Maintenance Data could not be loaded. Please check the file path.")
 if merged_dataset is None:
     st.error("Error: Merged dataset could not be loaded. Please check the file path.")
 
@@ -429,20 +438,91 @@ def show_data_cleaning_steps():
         st.write(merged_dataset.head())
 
 def show_missingness_analysis():
-    st.title("Data Merging & Missingness")
-    if df is not None:
-        st.write("### Missing Values Summary:")
-        missing = df.isnull().sum()
-        missing = missing[missing > 0]
-        if not missing.empty:
-            st.write(missing)
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(df.isnull(), cbar=False, cmap="viridis")
-            st.pyplot(fig)
+    st.title("Data Merging & Missingness Analysis")
+
+    # Dropdown to select the dataset
+    dataset_option = st.selectbox(
+        "Select Dataset for Missingness Analysis",
+        ["Car Insurance Claims", 
+         "Vehicle Features Data", 
+         "Vehicle Maintenance Data"]
+    )
+
+    # Map the selection to datasets
+    if dataset_option == "Car Insurance Claims":
+        df_before = insurance_clean
+        df_after = insurance_after_imputation
+        imputation_steps = """
+        1. **Identified Missing Values**: Focused on missing values in claim amount, policyholder information, and vehicle data.
+        2. **Imputation Strategies**:
+            - **Mean Imputation**: Applied to missing numerical values like claim amounts, using the mean of the column.
+            - **Mode Imputation**: Used for categorical features such as policy type, filling with the most frequent value.
+            - **Forward Fill**: Used for date-based features, assuming the last value is more appropriate.
+        3. **Rechecked Missingness**: After imputation, confirmed that all missing values were addressed.
+        """
+    elif dataset_option == "Vehicle Features Data":
+        df_before = features_clean
+        df_after = features_after_imputation
+        imputation_steps = """
+        1. **Identified Missing Values**: Focused on missing values in vehicle features like engine size, color, and transmission.
+        2. **Imputation Strategies**:
+            - **Median Imputation**: Applied for features like engine size and weight that are numeric.
+            - **Mode Imputation**: Used for categorical features like color and transmission type, filling with the most common value.
+        3. **Rechecked Missingness**: After imputation, checked that no missing values remained.
+        """
+    elif dataset_option == "Vehicle Maintenance Data":
+        df_before = maintenance_clean
+        df_after = maintenance_after_imputation
+        imputation_steps = """
+        1. **Identified Missing Values**: Focused on missing maintenance logs, repair dates, and costs.
+        2. **Imputation Strategies**:
+            - **Forward Fill**: Used for sequential maintenance records to carry forward the previous values for date and cost.
+            - **Mean Imputation**: Applied for numerical values like maintenance cost, replacing missing data with the mean of the column.
+        3. **Rechecked Missingness**: After imputation, confirmed no missing data remained in critical columns.
+        """
+    else:
+        st.error("Invalid selection.")
+        return
+
+    # Show missingness heatmap before imputation
+    if df_before is not None:
+        st.write(f"### Missingness Heatmap for {dataset_option} (Before Imputation):")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(df_before.isnull(), cbar=False, cmap="viridis")
+        st.pyplot(fig)
+
+        # Show missing values summary for before imputation
+        st.write(f"### Missing Values Summary for {dataset_option} (Before Imputation):")
+        missing_before = df_before.isnull().sum()
+        missing_before = missing_before[missing_before > 0]
+        if not missing_before.empty:
+            st.write(missing_before)
         else:
             st.success("No missing values found in the dataset!")
     else:
-        st.error("Data not loaded. Please check the source file.")
+        st.error(f"Data for '{dataset_option}' (Before Imputation) could not be loaded.")
+
+    # Show missingness heatmap after imputation
+    if df_after is not None:
+        st.write(f"### Missingness Heatmap for {dataset_option} (After Imputation):")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(df_after.isnull(), cbar=False, cmap="viridis")
+        st.pyplot(fig)
+
+        # Show missing values summary for after imputation
+        st.write(f"### Missing Values Summary for {dataset_option} (After Imputation):")
+        missing_after = df_after.isnull().sum()
+        missing_after = missing_after[missing_after > 0]
+        if not missing_after.empty:
+            st.write(missing_after)
+        else:
+            st.success("No missing values found after imputation!")
+    else:
+        st.error(f"Data for '{dataset_option}' (After Imputation) could not be loaded.")
+
+    # Explanation of imputation steps specific to each dataset
+    st.write("### Steps Taken for Removing Missingness (Imputation):")
+    st.write(imputation_steps)
 
 # Placeholder functions for additional pages
 def show_eda():
