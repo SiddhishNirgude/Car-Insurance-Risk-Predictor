@@ -316,6 +316,16 @@ def show_data_cleaning_steps():
     # Dropdown for dataset selection
     dataset_option = st.selectbox("Select Dataset", ["Car Insurance Claims", "Vehicle Features Data", 
                                                    "Vehicle Maintenance Data", "Merged Dataset"])
+
+    # Check for dataset loading errors
+    if insurance_clean is None:
+        st.error("Error: Car Insurance Claims Data could not be loaded. Please check the file path.")
+    if features_clean is None:
+        st.error("Error: Vehicle Features Data could not be loaded. Please check the file path.")
+    if maintenance_clean is None:
+        st.error("Error: Vehicle Maintenance Data could not be loaded. Please check the file path.")
+    if merged_dataset is None:
+        st.error("Error: Merged dataset could not be loaded. Please check the file path.")
     
     # Show the cleaning steps for the corresponding dataset
     if dataset_option == "Car Insurance Claims":
