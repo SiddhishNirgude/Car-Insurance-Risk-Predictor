@@ -143,12 +143,49 @@ def show_home_page():
 # --- DATA SCIENCE SPACE PAGES ---
 def show_data_overview():
     st.title("Data Overview")
+    
+    # Dropdown for dataset selection
+    dataset_option = st.selectbox("Select Dataset", ["Car Insurance Claims", "Vehicle Features Data", 
+                                                   "Vehicle Maintenance Data", "Merged Dataset"])
+    
+    # Load the corresponding dataset based on the selection
+    if dataset_option == "Car Insurance Claims":
+        df = car_insurance_claim
+    elif dataset_option == "Vehicle Features Data":
+        df = vehicle_features_data
+    elif dataset_option == "Vehicle Maintenance Data":
+        df = vehicle_maintenance_data
+    else:  # Merged Dataset
+        df = merged_dataset
+
+    # Display the dataset table
     if df is not None:
         st.write("### Dataset Snapshot:")
         st.dataframe(df.head())
         st.write(f"**Dataset Shape**: {df.shape}")
     else:
         st.error("Data not loaded. Please check the source file.")
+
+    # Dropdown to select a column from the selected dataset
+    if df is not None:
+        column_option = st.selectbox("Select Column", df.columns)
+
+        # Display column definition or description (you can customize this dictionary)
+        column_definitions = {
+            'Age': 'Age of the insured individual.',
+            'Policy Type': 'Type of the insurance policy (e.g., Full Coverage, Liability).',
+            'Claim Amount': 'Amount claimed by the insured individual for the incident.',
+            # Add other columns here with their definitions...
+        }
+        
+        # Show column definition
+        if column_option in column_definitions:
+            st.write(f"### Column Definition: {column_option}")
+            st.write(column_definitions[column_option])
+        else:
+            st.write("No definition available for this column.")
+
+
 
 def show_data_statistics():
     st.title("Data Statistics")
