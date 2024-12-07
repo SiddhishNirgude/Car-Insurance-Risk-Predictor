@@ -34,6 +34,7 @@ features_clean = load_dataset("features_clean.csv")
 maintenance_clean = load_dataset("maintenance_clean.csv")
 insurance_after_imputation = load_dataset("insurance_after_imputation.csv")
 features_after_imputation = load_dataset("features_after_imputation.csv")
+features_induced_missing = load_dataset("features_missing.csv")
 maintenance_after_imputation = load_dataset("maintenance_after_imputation.csv")
 merged_dataset = load_dataset("final_integrated_dataset.csv")
 
@@ -53,6 +54,8 @@ if maintenance_clean is None:
 if insurance_after_imputation is None:
     st.error("Error: After Imputation Car Insurance Claims Data could not be loaded. Please check the file path.")
 if features_after_imputation is None:
+    st.error("Error: After Imputation Vehicle Features Data could not be loaded. Please check the file path.")
+if features_induced_missing is None:
     st.error("Error: After Imputation Vehicle Features Data could not be loaded. Please check the file path.")
 if maintenance_after_imputation is None:
     st.error("Error: After Imputation Vehicle Maintenance Data could not be loaded. Please check the file path.")
