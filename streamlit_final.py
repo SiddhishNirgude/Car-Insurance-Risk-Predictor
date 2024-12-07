@@ -464,18 +464,17 @@ def show_missingness_analysis():
             - **K-Nearest Neighbors (KNN) Imputation**: Utilized for numerical features such as `YOJ`, `INCOME`, `HOME_VAL`, and `CAR_AGE`, imputing missing values based on similarities in other data points.
         3. **Rechecked Missingness**: Verified after imputation that all missing values were addressed, ensuring no residual missingness.
         """
-    elif dataset_option == "Vehicle Features Data":
-        df_before = vehicle_features_data
-        df_induced = features_induced_missing
+    elif dataset_option == "Vehicle Features":
+        df_before = features_before_imputation
         df_after = features_after_imputation
         imputation_steps = """
-        1. **Introduced Missingness**: Artificially induced missing values in specific columns to simulate real-world scenarios.
-        2. **Identified Missing Values**: Used summary statistics and heatmaps to locate the missing data in induced dataset.
-        3. **Imputation Strategies**:
-            - **Median Imputation**: Applied for features like engine size and weight that are numeric.
-            - **Mode Imputation**: Used for categorical features like color and transmission type, filling with the most common value.
-        4. **Rechecked Missingness**: After imputation, checked that no missing values remained.
+        1. **Induced Missingness**: Introduced artificial missingness in selected columns (`age_of_car`, `age_of_policyholder`, `population_density`, `displacement`, `turning_radius`, `make`, `segment`, `fuel_type`) to simulate real-world scenarios.
+        2. **Imputation Strategies**:
+            - **Mode Imputation**: Applied to categorical features (`segment`, `fuel_type`) by replacing missing values with the most frequent category.
+            - **K-Nearest Neighbors (KNN) Imputation**: Used for numerical features (`age_of_car`, `age_of_policyholder`, `population_density`, `displacement`, `turning_radius`, `make`) by leveraging similarities among other features to fill missing values.
+        3. **Rechecked Missingness**: Verified after imputation that all missing values were addressed, ensuring the dataset's completeness.
         """
+
     elif dataset_option == "Vehicle Maintenance Data":
         df_before = maintenance_clean
         df_after = maintenance_after_imputation
