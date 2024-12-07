@@ -489,7 +489,11 @@ def show_missingness_analysis():
         st.error("Invalid selection.")
         return
 
-    # Show missingness heatmap for selected dataset
+    # Display imputation steps above heatmaps
+    st.write("### Steps Taken for Removing Missingness (Imputation):")
+    st.write(imputation_steps)
+
+    # Show missingness heatmaps for the selected dataset
     if dataset_option == "Vehicle Features Data":
         # Original Data (Before Inducing Missingness)
         st.write("### Missingness Heatmap for Vehicle Features Data (Before Inducing Missingness):")
@@ -522,10 +526,6 @@ def show_missingness_analysis():
             fig, ax = plt.subplots(figsize=(10, 6))
             sns.heatmap(df_after.isnull(), cbar=False, cmap="viridis")
             st.pyplot(fig)
-
-    # Explanation of imputation steps specific to each dataset
-    st.write("### Steps Taken for Removing Missingness (Imputation):")
-    st.write(imputation_steps)
 
 # Placeholder functions for additional pages
 def show_eda():
