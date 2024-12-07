@@ -44,6 +44,13 @@ if vehicle_maintenance_data is None:
     st.error("Error: Vehicle Maintenance Data could not be loaded. Please check the file path.")
 if merged_dataset is None:
     st.error("Error: Merged dataset could not be loaded. Please check the file path.")
+if insurance_clean is None:
+        st.error("Error: Car Insurance Claims Data could not be loaded. Please check the file path.")
+if features_clean is None:
+        st.error("Error: Vehicle Features Data could not be loaded. Please check the file path.")
+if maintenance_clean is None:
+        st.error("Error: Vehicle Maintenance Data could not be loaded. Please check the file path.")
+
 
 # --- TOP-LEVEL NAVIGATION ---
 st.sidebar.title("TechImpact Solutions")
