@@ -22,6 +22,7 @@ def load_dataset(file_path):
         data = pd.read_csv(file_path)
         return data
     except FileNotFoundError as e:
+        st.error(f"File not found: {file_path}")
         return None
 
 # Load datasets
@@ -31,8 +32,6 @@ vehicle_maintenance_data = load_dataset("vehicle_maintenance_data.csv")
 insurance_clean = load_dataset("insurance_clean.csv")
 features_clean = load_dataset("features_clean.csv")
 maintenance_clean = load_dataset("maintenance_clean.csv")
-
-# Load merged dataset
 merged_dataset = load_dataset("final_integrated_dataset.csv")
 
 # Check for dataset loading errors and show relevant messages
@@ -42,14 +41,15 @@ if vehicle_features_data is None:
     st.error("Error: Vehicle Features Data could not be loaded. Please check the file path.")
 if vehicle_maintenance_data is None:
     st.error("Error: Vehicle Maintenance Data could not be loaded. Please check the file path.")
+if insurance_clean is None:
+    st.error("Error: Cleaned Car Insurance Claims Data could not be loaded. Please check the file path.")
+if features_clean is None:
+    st.error("Error: Cleaned Vehicle Features Data could not be loaded. Please check the file path.")
+if maintenance_clean is None:
+    st.error("Error: Cleaned Vehicle Maintenance Data could not be loaded. Please check the file path.")
 if merged_dataset is None:
     st.error("Error: Merged dataset could not be loaded. Please check the file path.")
-if insurance_clean is None:
-        st.error("Error: Car Insurance Claims Data could not be loaded. Please check the file path.")
-if features_clean is None:
-        st.error("Error: Vehicle Features Data could not be loaded. Please check the file path.")
-if maintenance_clean is None:
-        st.error("Error: Vehicle Maintenance Data could not be loaded. Please check the file path.")
+
 
 
 # --- TOP-LEVEL NAVIGATION ---
