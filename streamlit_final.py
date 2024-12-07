@@ -8,122 +8,129 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.impute import KNNImputer  # Use this instead of importing KNNImputer directly
 
-# Page configuration
-st.set_page_config(
-    page_title="Car Insurance Risk Predictor - Data Science",
-    page_icon="🚗",
-    layout="wide"
+
+# Set page configuration
+st.set_page_config(page_title="Car Insurance Risk Predictor", layout="wide")
+
+# Custom CSS for background color
+st.markdown(
+    """
+    <style>
+    .reportview-container {
+        background-color: #FAF3E0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
 
-# Cache the data loading
+# Data loading function
 @st.cache_data
 def load_data():
-    # Add your data loading logic here
-    return pd.read_csv("your_data.csv")
-
-def main():
-    st.title("Car Insurance Risk Predictor - Data Science Analysis")
-    
-    # Sidebar navigation for Data Science sections
-    st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox(
-        "Select Section",
-        ["Data Overview", 
-         "Data Statistics",
-         "Data Merging and Missingness",
-         "EDA",
-         "Correlation Analysis",
-         "Category Analysis and Hypothesis Testing"]
-    )
-
-    # Load data
     try:
-        df = load_data()
-    except:
-        st.error("Error loading data. Please check data file path.")
-        return
+        # Load your datasets
+        final_integrated_df_cleaned = pd.read_csv("final_integrated_df_cleaned.csv")
+        return final_integrated_df_cleaned
+    except FileNotFoundError as e:
+        st.error(f"Error: {e}. Please ensure the CSV file is in the correct directory.")
+        return None
 
-    # Section routing
-    if page == "Data Overview":
-        data_overview()
-    elif page == "Data Statistics":
-        data_statistics(df)
-    elif page == "Data Merging and Missingness":
-        data_merging_missingness(df)
-    elif page == "EDA":
-        exploratory_data_analysis(df)
-    elif page == "Correlation Analysis":
-        correlation_analysis(df)
-    elif page == "Category Analysis and Hypothesis Testing":
-        category_analysis(df)
+# Load the data
+df = load_data()
 
-def data_overview():
-    st.header("Data Overview 📊")
+# Check if data was loaded successfully
+if df is None:
+    st.stop()
+else:
+    st.success("Data loaded successfully!")
+
+# Display the car insurance illustration
+st.image("Imageof-Auto-Insurance.jpg", 
+         caption="Car Insurance Risk Prediction", use_column_width=True)
+
+# Sidebar for navigation
+st.sidebar.title('Navigation')
+page = st.sidebar.radio("Go to", [
+    'Data Overview', 
+    'Data Statistics', 
+    'Data Merging and Missingness'
+])
+
+# 1. Data Overview Page
+if page == 'Data Overview':
+    st.title('Data Overview')
     
-    st.write("""
-    ### Data Sources
-    This project combines data from three main sources:
-    """)
+    st.header("Dataset Description")
+    st.write("This project integrates three main data sources:")
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        #### 1. Insurance Data
+        ### 🚗 Insurance Data
         - Customer demographics
-        - Claim history
+        - Claims history
         - Risk factors
-        [Source Link](your_link_here)
+        - Policy information
         """)
-    
+        
     with col2:
         st.markdown("""
-        #### 2. Vehicle Features
+        ### 🔧 Vehicle Features
         - Technical specifications
         - Safety features
         - Performance metrics
-        [Source Link](your_link_here)
+        - Vehicle characteristics
         """)
-    
+        
     with col3:
         st.markdown("""
-        #### 3. Maintenance Records
+        ### 📋 Maintenance Data
         - Service history
-        - Repair records
         - Maintenance scores
-        [Source Link](your_link_here)
+        - Vehicle condition
+        - Repair records
         """)
 
-def data_statistics(df):
-    st.header("Data Statistics 📈")
-    
-    # Summary statistics
-    st.subheader("Summary Statistics")
-    st.write(df.describe())
-    
-    # Data info
-    st.subheader("Dataset Information")
-    buffer = io.StringIO()
-    df.info(buf=buffer)
-    st.text(buffer.getvalue())
+    # Display sample data
+    st.header("Sample Data")
+    st.dataframe(df.head())
+    st.write(f"Dataset Shape: {df.shape}")
 
-def data_merging_missingness(df):
-    st.header("Data Merging and Missingness Analysis 🔍")
+# 2. Data Statistics Page
+elif page == 'Data Statistics':
+    st.title('Data Statistics')
     
-    # Missing values analysis
-    st.subheader("Missing Values Analysis")
-    missing_values = df.isnull().sum()
-    missing_percent = (missing_values / len(df)) * 100
+    # Numeric and categorical columns
+    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+    categorical_cols = df.select_dtypes(include=['object', 'bool']).columns
     
-    missing_df = pd.DataFrame({
-        'Missing Values': missing_values,
-        'Percentage': missing_percent
+    # Summary statistics for numeric columns
+    st.header("Numeric Features Statistics")
+    st.dataframe(df[numeric_cols].describe())
+    
+    # Categorical columns summary
+    st.header("Categorical Features Summary")
+    for col in categorical_cols:
+        st.subheader(f"{col} Distribution")
+        st.write(df[col].value_counts())
+        st.write(df[col].value_counts(normalize=True).mul(100).round(2).astype(str) + '%')
+
+# 3. Data Merging and Missingness
+elif page == 'Data Merging and Missingness':
+    st.title('Data Merging and Missingness Analysis')
+    
+    # Missingness heatmap
+    st.header("Missing Values Heatmap")
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.heatmap(df.isnull(), yticklabels=False, cbar=True, cmap='viridis')
+    st.pyplot(fig)
+    
+    # Missing values summary
+    st.header("Missing Values Summary")
+    missing = pd.DataFrame({
+        'Missing Values': df.isnull().sum(),
+        'Percentage': df.isnull().sum() / len(df) * 100
     })
-    
-    # Plot missing values
-    fig = px.bar(
-        missing_df[missing_df['Missing Values'] > 0],
-        title='Missing Values by Column',
-        labels={'value': 'Percentage Missing', 'index': 'Columns'}
-    )
-    st.plotly_chart(fig)
+    missing = missing[missing['Missing Values'] > 0].sort_values('Missing Values', ascending=False)
+    st.dataframe(missing)
