@@ -26,7 +26,7 @@ def load_dataset(file_path):
 
 # Load datasets
 car_insurance_claim = load_dataset("car_insurance_claim.csv")
-vehicle_features_data = load_dataset("vehicle_features_data.csv")
+vehicle_features_data = load_dataset("Vehicle features data.csv")
 vehicle_maintenance_data = load_dataset("vehicle_maintenance_data.csv")
 
 # Load merged dataset
