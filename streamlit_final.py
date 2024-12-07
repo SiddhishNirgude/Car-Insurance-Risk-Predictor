@@ -48,13 +48,87 @@ else:
 st.image("Imageof-Auto-Insurance.jpg", 
          caption="Car Insurance Risk Prediction", use_column_width=True)
 
-# Sidebar for navigation
-st.sidebar.title('Navigation')
-page = st.sidebar.radio("Go to", [
-    'Data Overview', 
-    'Data Statistics', 
-    'Data Merging and Missingness'
-])
+# Sidebar navigation
+st.sidebar.title("Navigation")
+pages = ["Introduction", 
+         "Data Overview",
+         "Data Statistics",
+         "Data Merging & Missingness",
+         "EDA",
+         "Correlation Analysis",
+         "Category Analysis"]
+
+selected_page = st.sidebar.selectbox("Go to", pages)
+
+# Introduction page content
+if selected_page == "Introduction":
+    # Main title with emoji
+    st.title("🚗 Car Insurance Risk Predictor")
+    
+    # Project overview section
+    st.header("Project Overview")
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.write("""
+        This project focuses on developing a sophisticated risk prediction system 
+        for car insurance claims by analyzing three key aspects:
+        
+        1. **Insurance Claims Analysis**: Understanding patterns in insurance claims
+        2. **Vehicle Safety Assessment**: Evaluating safety features and their impact
+        3. **Maintenance Pattern Study**: Analyzing how maintenance affects risk
+        """)
+        
+    with col2:
+        # Add your project image
+        st.image("Imageof-Auto-Insurance.jpg", caption="Car Insurance Analytics")
+    
+    # Project components
+    st.header("Key Components")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        ### 📊 Insurance Risk Analysis
+        - Claims prediction
+        - Risk factor identification
+        - Premium calculation insights
+        """)
+        
+    with col2:
+        st.markdown("""
+        ### 🛡️ Vehicle Safety Analysis
+        - Safety feature evaluation
+        - Accident risk assessment
+        - Safety rating impact
+        """)
+        
+    with col3:
+        st.markdown("""
+        ### 🔧 Maintenance Impact
+        - Service history analysis
+        - Maintenance patterns
+        - Risk correlation
+        """)
+    
+    # Data sources
+    st.header("Data Integration")
+    st.write("""
+    This project combines data from three main sources to provide comprehensive insights:
+    1. Insurance claim records
+    2. Vehicle specifications and safety features
+    3. Maintenance and service history
+    """)
+    
+    # Project objectives
+    st.header("Project Objectives")
+    st.markdown("""
+    - Develop accurate risk prediction models
+    - Identify key factors influencing insurance claims
+    - Provide actionable insights for risk assessment
+    - Create an interactive tool for risk evaluation
+    """)
 
 # 1. Data Overview Page
 if page == 'Data Overview':
