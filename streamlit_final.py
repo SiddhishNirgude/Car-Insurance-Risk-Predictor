@@ -464,14 +464,16 @@ def show_missingness_analysis():
         3. **Rechecked Missingness**: After imputation, confirmed that all missing values were addressed.
         """
     elif dataset_option == "Vehicle Features Data":
-        df_before = features_clean
+        df_before = vehicle_features_data
+        df_induced = features_induced_missing
         df_after = features_after_imputation
         imputation_steps = """
-        1. **Identified Missing Values**: Focused on missing values in vehicle features like engine size, color, and transmission.
-        2. **Imputation Strategies**:
+        1. **Introduced Missingness**: Artificially induced missing values in specific columns to simulate real-world scenarios.
+        2. **Identified Missing Values**: Used summary statistics and heatmaps to locate the missing data in induced dataset.
+        3. **Imputation Strategies**:
             - **Median Imputation**: Applied for features like engine size and weight that are numeric.
             - **Mode Imputation**: Used for categorical features like color and transmission type, filling with the most common value.
-        3. **Rechecked Missingness**: After imputation, checked that no missing values remained.
+        4. **Rechecked Missingness**: After imputation, checked that no missing values remained.
         """
     elif dataset_option == "Vehicle Maintenance Data":
         df_before = maintenance_clean
@@ -487,41 +489,39 @@ def show_missingness_analysis():
         st.error("Invalid selection.")
         return
 
-    # Show missingness heatmap before imputation
-    if df_before is not None:
-        st.write(f"### Missingness Heatmap for {dataset_option} (Before Imputation):")
+    # Show missingness heatmap for selected dataset
+    if dataset_option == "Vehicle Features Data":
+        # Original Data (Before Inducing Missingness)
+        st.write("### Missingness Heatmap for Vehicle Features Data (Before Inducing Missingness):")
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.heatmap(df_before.isnull(), cbar=False, cmap="viridis")
         st.pyplot(fig)
 
-        # Show missing values summary for before imputation
-        st.write(f"### Missing Values Summary for {dataset_option} (Before Imputation):")
-        missing_before = df_before.isnull().sum()
-        missing_before = missing_before[missing_before > 0]
-        if not missing_before.empty:
-            st.write(missing_before)
-        else:
-            st.success("No missing values found in the dataset!")
-    else:
-        st.error(f"Data for '{dataset_option}' (Before Imputation) could not be loaded.")
+        # Induced Missingness Data
+        st.write("### Missingness Heatmap for Vehicle Features Data (After Inducing Missingness):")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.heatmap(df_induced.isnull(), cbar=False, cmap="viridis")
+        st.pyplot(fig)
 
-    # Show missingness heatmap after imputation
-    if df_after is not None:
-        st.write(f"### Missingness Heatmap for {dataset_option} (After Imputation):")
+        # After Imputation
+        st.write("### Missingness Heatmap for Vehicle Features Data (After Imputation):")
         fig, ax = plt.subplots(figsize=(10, 6))
         sns.heatmap(df_after.isnull(), cbar=False, cmap="viridis")
         st.pyplot(fig)
-
-        # Show missing values summary for after imputation
-        st.write(f"### Missing Values Summary for {dataset_option} (After Imputation):")
-        missing_after = df_after.isnull().sum()
-        missing_after = missing_after[missing_after > 0]
-        if not missing_after.empty:
-            st.write(missing_after)
-        else:
-            st.success("No missing values found after imputation!")
     else:
-        st.error(f"Data for '{dataset_option}' (After Imputation) could not be loaded.")
+        # Heatmap for before imputation
+        if df_before is not None:
+            st.write(f"### Missingness Heatmap for {dataset_option} (Before Imputation):")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(df_before.isnull(), cbar=False, cmap="viridis")
+            st.pyplot(fig)
+
+        # Heatmap for after imputation
+        if df_after is not None:
+            st.write(f"### Missingness Heatmap for {dataset_option} (After Imputation):")
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(df_after.isnull(), cbar=False, cmap="viridis")
+            st.pyplot(fig)
 
     # Explanation of imputation steps specific to each dataset
     st.write("### Steps Taken for Removing Missingness (Imputation):")
