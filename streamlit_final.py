@@ -85,24 +85,35 @@ if selected_page == "Introduction":
     
     # Project components
     st.header("Key Components")
-    
+    st.write("""
+    This project combines data from three comprehensive Kaggle datasets to provide thorough insights into car insurance risk prediction:
+    """)
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         st.markdown("""
-        ### 📊 Insurance Risk Analysis
-        - Claims prediction
-        - Risk factor identification
-        - Premium calculation insights
-        """)
+        ### 1. Insurance Claims Data
+        **Source**: [Car Insurance Claim Data](https://www.kaggle.com/datasets/xiaomengsun/car-insurance-claim-data)
         
+        **Contains**:
+        - Customer demographics
+        - Claims history
+        - Policy details
+        - Risk indicators
+        """)
+
     with col2:
         st.markdown("""
-        ### 🛡️ Vehicle Safety Analysis
-        - Safety feature evaluation
-        - Accident risk assessment
-        - Safety rating impact
+        ### 2. Vehicle Specifications
+        **Source**: [Car Insurance Claim Prediction](https://www.kaggle.com/datasets/ifteshanajnin/carinsuranceclaimprediction-classification?select=train.csv)
+        
+        **Contains**:
+        - Technical specifications
+        - Safety features
+        - Vehicle characteristics
+        - Performance metrics
         """)
+
         
     with col3:
         st.markdown("""
