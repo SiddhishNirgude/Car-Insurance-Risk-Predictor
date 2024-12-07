@@ -106,11 +106,46 @@ if selected_page == "Introduction":
         
     with col3:
         st.markdown("""
-        ### 🔧 Maintenance Impact
-        - Service history analysis
-        - Maintenance patterns
-        - Risk correlation
-        """)
+    ### 3. Maintenance Records
+    **Source**: [Vehicle Maintenance Data](https://www.kaggle.com/datasets/chavindudulaj/vehicle-maintenance-data)
+    
+    **Contains**:
+    - Service history
+    - Maintenance patterns
+    - Repair records
+    - Vehicle condition metrics
+    """)
+
+    # Add data integration process
+    st.subheader("Data Integration Process")
+    st.markdown("""
+    The integration process involved:
+    - Merging datasets using common identifiers
+    - Handling missing values and duplicates
+    - Feature engineering from multiple sources
+    - Quality checks and validation
+
+    This comprehensive approach allows us to analyze:
+    - ✅ Risk factors from multiple perspectives
+    - ✅ Relationships between vehicle features and claims
+    - ✅ Impact of maintenance on insurance risk
+    """)
+
+    # Add acknowledgment
+    st.markdown("""
+    ---
+    *Data Sources: All datasets are sourced from Kaggle, a platform for data science and machine learning enthusiasts. 
+    We acknowledge the original contributors of these datasets.*
+    """)
+
+    # Project objectives
+    st.header("Project Objectives")
+    st.markdown("""
+    - Develop accurate risk prediction models
+    - Identify key factors influencing insurance claims
+    - Provide actionable insights for risk assessment
+    - Create an interactive tool for risk evaluation
+    """)
     
     # Data sources
     st.header("Data Integration")
