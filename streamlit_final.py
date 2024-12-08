@@ -705,6 +705,9 @@ def show_data_merging():
         st.subheader("Cleaned Dataset (After Dropping Unnecessary Columns)")
         st.write("Shape of the cleaned dataset:", final_integrated_df_cleaned.shape)
         st.dataframe(final_integrated_df_cleaned.head())
+        # Display list of dropped columns
+        st.write("Columns that were dropped during the cleaning process:")
+        st.write(columns_to_drop)
     except FileNotFoundError:
         st.error("The file 'final_integrated_dataset.csv' was not found. Please ensure the dataset is available.")
 
