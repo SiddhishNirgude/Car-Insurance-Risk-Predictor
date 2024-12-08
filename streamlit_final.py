@@ -771,6 +771,4 @@ elif selected_space == "Production Space":
     elif selected_page == "Insurance Calculator":
         show_insurance_calculator()
 
-# Stop if data loading failed
-if df is None and selected_space != "Home":
-    st.stop()
+
