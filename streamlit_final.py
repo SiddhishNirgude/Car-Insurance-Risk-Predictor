@@ -89,7 +89,7 @@ selected_page = None
 if selected_space == "Data Science Space":
     selected_page = st.sidebar.radio(
         "Navigate Data Science Space",
-        ["Data Overview", "Data Statistics","Data Cleaning", "Data Missingness Analysis", "Data Transformations",
+        ["Data Overview", "Data Statistics","Data Cleaning", "Data Missingness Analysis", "Data Transformations", "Data Merging & Integration",
          "EDA", "Correlation Analysis", "Category Analysis"]
     )
 elif selected_space == "Production Space":
@@ -672,6 +672,8 @@ elif selected_space == "Data Science Space":
     elif selected_page == "Data Missingness Analysis":
         show_missingness_analysis()
     elif selected_page == "Data Transformations":
+        show_data_transformations()
+    elif selected_page == "Data Merging & Integration":
         show_data_transformations()
     elif selected_page == "EDA":
         show_eda()
