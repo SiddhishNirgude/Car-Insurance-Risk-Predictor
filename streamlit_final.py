@@ -50,6 +50,7 @@ features_after_imputation = load_dataset("features_after_imputation.csv")
 features_induced_missing = load_dataset("features_missing.csv")
 maintenance_after_imputation = load_dataset("maintenance_after_imputation.csv")
 merged_dataset = load_dataset("final_integrated_dataset.csv")
+merged_reduced_cols_dataset = load_dataset("final_integrated_df_cleaned.csv")
 
 # Add the new datasets
 insurance_encoded = load_dataset("insurance_encoded.csv")
@@ -89,7 +90,8 @@ if maintenance_encoded is None:
     st.error("Error: Encoded Maintenance Data could not be loaded. Please check the file path.")
 if balanced_data is None:
     st.error("Error:  Data could not be loaded. Please check the file path.")
-
+if merged_reduced_cols_dataset is None:
+    st.error("Error:  Data could not be loaded. Please check the file path.")
 
 # --- TOP-LEVEL NAVIGATION ---
 st.sidebar.title("TechImpact Solutions")
