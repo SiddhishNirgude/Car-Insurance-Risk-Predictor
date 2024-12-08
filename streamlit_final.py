@@ -539,6 +539,60 @@ def show_missingness_analysis():
             sns.heatmap(df_after.isnull(), cbar=False, cmap="viridis")
             st.pyplot(fig)
 
+def show_data_transformations():
+    """
+    Display data transformations steps and outputs for selected datasets.
+    """
+    # Dropdown for dataset selection
+    dataset_option = st.selectbox(
+        "Select Dataset for Transformations",
+        ["Car Insurance Claims", 
+         "Vehicle Features Data", 
+         "Vehicle Maintenance Data"]
+    )
+
+    # Map dataset options to datasets and transformations documentation
+    if dataset_option == "Car Insurance Claims":
+        dataset = insurance_encoded
+        transformation_steps = """
+        ### Data Transformation Steps for Insurance Encoded Dataset:
+        1. **One-Hot Encoding**:
+            - Applied to categorical columns such as `OCCUPATION`, `EDUCATION`, and `POLICY_TYPE` to convert categories into numerical format.
+        2. **Log Transformation**:
+            - Performed on skewed numerical columns like `INCOME` to reduce skewness and improve normality.
+        3. **Feature Scaling**:
+            - Applied Min-Max Scaling to normalize numerical columns such as `AGE`, `INCOME`, and `CLAIM_AMOUNT` to a range of 0 to 1.
+        """
+    elif dataset_option == "Vehicle Features Data":
+        dataset = features_encoded
+        transformation_steps = """
+        ### Data Transformation Steps for Features Encoded Dataset:
+        1. **Label Encoding**:
+            - Applied to ordinal categorical columns such as `FUEL_TYPE` and `SEGMENT` to convert categories into integer values.
+        2. **Binning**:
+            - Used to categorize continuous columns like `AGE_OF_CAR` and `DISPLACEMENT` into bins (e.g., `Old`, `Medium`, `New`).
+        3. **Feature Scaling**:
+            - Performed Standard Scaling on numerical columns such as `POPULATION_DENSITY` and `TURNING_RADIUS` for consistency in machine learning models.
+        """
+    elif dataset_option == "Vehicle Maintenance Data":
+        dataset = maintenance_encoded
+        transformation_steps = """
+        ### Data Transformation Steps for Maintenance Encoded Dataset:
+        1. **Frequency Encoding**:
+            - Applied to high-cardinality categorical columns such as `VEHICLE_MAKE` to encode based on the frequency of each category.
+        2. **Feature Engineering**:
+            - Created new features such as `AGE_OF_POLICY` (calculated as `CURRENT_YEAR - POLICY_START_YEAR`) to enhance predictive power.
+        3. **Log Transformation**:
+            - Applied to skewed columns such as `MAINTENANCE_COST` to handle outliers and improve distribution.
+        """
+    
+    # Display transformation steps documentation
+    st.write(transformation_steps)
+
+    # Display the transformed dataset
+    st.write("### Transformed Dataset:")
+    st.dataframe(dataset)
+
 # Placeholder functions for additional pages
 def show_eda():
     st.title("Exploratory Data Analysis")
@@ -582,7 +636,7 @@ elif selected_space == "Data Science Space":
     elif selected_page == "Data Missingness Analysis":
         show_missingness_analysis()
     elif selected_page == "Data Transformations":
-        show_missingness_analysis()
+        show_data_transformations()
     elif selected_page == "EDA":
         show_eda()
     elif selected_page == "Correlation Analysis":
