@@ -629,6 +629,89 @@ def show_data_transformations():
     st.write("### Transformed Dataset:")
     st.dataframe(dataset)
 
+
+def show_data_merging():
+    """
+    Displays the steps involved in the data integration process and the resulting dataset.
+    This function explains how datasets were merged, cleaned, and preprocessed after integration.
+    """
+    st.header("Data Integration Process")
+    st.markdown("""
+    ### Steps for Data Integration:
+    1. **Adding Unique Identifier (`policy_id_no`)**:
+        - Each dataset was assigned a unique identifier column, `policy_id_no`, ensuring at least 10,000 unique values.
+        - This column acted as a common key for merging datasets.
+
+    2. **Merging Datasets**:
+        - **Insurance Data**: Merged with vehicle features using an inner join on `policy_id_no`.
+        - The result was further merged with vehicle maintenance data using another inner join on `policy_id_no`.
+        - This approach ensured that only records with matching `policy_id_no` across all datasets were included in the final integrated dataset.
+
+    3. **Shape of the Final Merged Dataset**:
+        - After merging, the final dataset's shape was checked to ensure proper integration.
+
+    ### Steps for Cleaning After Integration:
+    1. **Removing Duplicate Rows**:
+        - Duplicates were identified and removed to ensure data consistency.
+    
+    2. **Checking and Handling Missing Values**:
+        - Missing values in each column were identified, and the total count and percentage were calculated.
+        - Rows with missing values were isolated for further analysis.
+
+    3. **Dropping Unnecessary Columns**:
+        - Redundant or irrelevant columns were removed to reduce noise in the dataset. These included:
+            - Unique identifiers (e.g., `ID`), calculated columns (e.g., `policy_tenure`), and redundant categorical features.
+
+    ### Data Transformation After Integration:
+    - The transformed dataset involved handling skewed distributions, normalizing data, and encoding categorical features for machine learning models.
+    """)
+
+    # Load the final integrated dataset
+    try:
+        
+        st.subheader("Final Integrated Dataset")
+        st.dataframe(final_integrated_df.head())
+
+        # Display shape of the dataset
+        st.write("Shape of the final integrated dataset:", final_integrated_df.shape)
+
+        # Clean the dataset by removing duplicates
+        final_integrated_df_no_duplicates = final_integrated_df.drop_duplicates()
+        st.write("Shape after removing duplicates:", final_integrated_df_no_duplicates.shape)
+
+        # Display cleaned dataset
+        st.subheader("Cleaned Dataset (After Removing Duplicates)")
+        st.dataframe(final_integrated_df_no_duplicates.head())
+
+        # Check for missing values
+        missing_data = final_integrated_df_no_duplicates.isnull().sum()
+        total_missing = missing_data.sum()
+
+        st.write("Total missing values in the dataset:", total_missing)
+        if total_missing > 0:
+            st.write("Columns with missing values and their counts:")
+            st.dataframe(missing_data[missing_data > 0])
+
+        # Display remaining columns after dropping unnecessary ones
+        columns_to_drop = [
+            'ID', 'BLUEBOOK', 'RED_CAR', 'policy_id', 'policy_tenure', 
+            'age_of_car', 'age_of_policyholder', 'population_density', 
+            'make', 'Vehicle_Model_Car', 'Vehicle_Model_Motorcycle', 
+            'Vehicle_Model_SUV', 'Vehicle_Model_Truck', 'Vehicle_Model_Van', 
+            'Fuel_Type_Electric', 'Fuel_Type_Petrol', 'Transmission_Type_Manual', 
+            'days_since_service', 'days_until_warranty_expires'
+        ]
+        final_integrated_df_cleaned = final_integrated_df_no_duplicates.drop(columns=columns_to_drop)
+
+        st.subheader("Cleaned Dataset (After Dropping Unnecessary Columns)")
+        st.write("Shape of the cleaned dataset:", final_integrated_df_cleaned.shape)
+        st.dataframe(final_integrated_df_cleaned.head())
+    except FileNotFoundError:
+        st.error("The file 'final_integrated_dataset.csv' was not found. Please ensure the dataset is available.")
+
+
+
+
 # Placeholder functions for additional pages
 def show_eda():
     st.title("Exploratory Data Analysis")
@@ -674,7 +757,7 @@ elif selected_space == "Data Science Space":
     elif selected_page == "Data Transformations":
         show_data_transformations()
     elif selected_page == "Data Merging & Integration":
-        show_data_transformations()
+        show_data_merging()
     elif selected_page == "EDA":
         show_eda()
     elif selected_page == "Correlation Analysis":
