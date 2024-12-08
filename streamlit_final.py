@@ -720,7 +720,14 @@ def show_data_merging():
 
         # List of columns to balance
         columns_to_balance = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
-    
+
+    # Function to plot pie chart
+    def plot_pie_chart(class_distribution):
+        fig, ax = plt.subplots()
+        ax.pie(class_distribution, labels=class_distribution.index, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        return fig
+
         for col in columns_to_balance:
             # Analyzing class imbalance before SMOTE (in the original dataset)
             class_distribution_before = merged_dataset_no_duplicates[col].value_counts()
@@ -746,12 +753,7 @@ def show_data_merging():
         st.subheader("Balanced Dataset After SMOTE")
         st.dataframe(balanced_dataset.head())
         
-    # Function to plot pie chart
-    def plot_pie_chart(class_distribution):
-        fig, ax = plt.subplots()
-        ax.pie(class_distribution, labels=class_distribution.index, autopct='%1.1f%%', startangle=90)
-        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-        return fig
+
 
         
 
