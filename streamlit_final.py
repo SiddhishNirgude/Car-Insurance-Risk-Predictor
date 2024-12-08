@@ -556,34 +556,68 @@ def show_data_transformations():
         dataset = insurance_encoded
         transformation_steps = """
         ### Data Transformation Steps for Insurance Encoded Dataset:
-        1. **One-Hot Encoding**:
-            - Applied to categorical columns such as `OCCUPATION`, `EDUCATION`, and `POLICY_TYPE` to convert categories into numerical format.
-        2. **Log Transformation**:
-            - Performed on skewed numerical columns like `INCOME` to reduce skewness and improve normality.
-        3. **Feature Scaling**:
-            - Applied Min-Max Scaling to normalize numerical columns such as `AGE`, `INCOME`, and `CLAIM_AMOUNT` to a range of 0 to 1.
+        
+        1. **Binary Encoding**:
+            - Applied Label Encoding to categorical columns such as `MSTATUS`, `GENDER`, `CAR_USE`, and `URBANICITY` to convert them into binary (0 and 1) values.
+        
+        2. **Ordinal Encoding for Education**:
+            - Applied Ordinal Encoding to the `EDUCATION` column with the order `['<High School', 'z_High School', 'Bachelors', 'Masters', 'PhD']` to assign numeric values based on education levels.
+        
+        3. **Ordinal Encoding for Occupation**:
+            - Applied Ordinal Encoding to the `OCCUPATION` column with the order `['Student', 'Home Maker', 'z_Blue Collar', 'Clerical', 'Professional', 'Manager', 'Lawyer', 'Doctor']` to convert occupation levels into numeric values.
+        
+        4. **One-Hot Encoding for CAR_TYPE**:
+            - Applied One-Hot Encoding to the `CAR_TYPE` column to create separate binary columns for each car type (e.g., `CAR_TYPE_Panel Truck`, `CAR_TYPE_Pickup`, etc.).
+        
+        5. **Scaling Numerical Variables**:
+            - Applied Standard Scaling (Z-Score normalization) to numerical columns such as `AGE`, `YOJ`, `INCOME`, `HOME_VAL`, `TRAVTIME`, `BLUEBOOK`, `OLDCLAIM`, `CLM_AMT`, and `CAR_AGE` to ensure they are on the same scale with a mean of 0 and standard deviation of 1.
+        
+        6. **Removing Outliers**:
+            - Removed outliers using a Z-score threshold of 3 for numerical columns (`AGE`, `YOJ`, `INCOME`, `HOME_VAL`, `TRAVTIME`, `BLUEBOOK`, `OLDCLAIM`, `CLM_AMT`, and `CAR_AGE`).
         """
+
     elif dataset_option == "Vehicle Features Data":
         dataset = features_encoded
         transformation_steps = """
         ### Data Transformation Steps for Features Encoded Dataset:
-        1. **Label Encoding**:
-            - Applied to ordinal categorical columns such as `FUEL_TYPE` and `SEGMENT` to convert categories into integer values.
-        2. **Binning**:
-            - Used to categorize continuous columns like `AGE_OF_CAR` and `DISPLACEMENT` into bins (e.g., `Old`, `Medium`, `New`).
-        3. **Feature Scaling**:
-            - Performed Standard Scaling on numerical columns such as `POPULATION_DENSITY` and `TURNING_RADIUS` for consistency in machine learning models.
+        1. **Drop High Cardinality Columns**:
+            - Columns like `model`, `engine_type`, and `area_cluster` were dropped to reduce dimensionality.
+        2. **One-Hot Encoding**:
+            - Applied to nominal categorical columns such as `SEGMENT`, `FUEL_TYPE`, `TRANSMISSION_TYPE`, `STEERING_TYPE`, and `REAR_BRAKES_TYPE`.
+        3. **Binary Columns**:
+            - Binary columns such as `is_esc`, `is_parking_sensors`, and `is_claim` were retained as-is since they are already encoded.
+        4. **Feature Scaling**:
+            - Standard Scaling was applied to numerical columns like `POLICY_TENURE`, `AGE_OF_CAR`, and `GROSS_WEIGHT` to normalize their values.
+        5. **Outlier Removal**:
+            - Outliers were removed from numeric columns using a Z-score threshold of 3 to ensure the model is not affected by extreme values.
         """
+    
     elif dataset_option == "Vehicle Maintenance Data":
         dataset = maintenance_encoded
         transformation_steps = """
-        ### Data Transformation Steps for Maintenance Encoded Dataset:
-        1. **Frequency Encoding**:
-            - Applied to high-cardinality categorical columns such as `VEHICLE_MAKE` to encode based on the frequency of each category.
-        2. **Feature Engineering**:
-            - Created new features such as `AGE_OF_POLICY` (calculated as `CURRENT_YEAR - POLICY_START_YEAR`) to enhance predictive power.
-        3. **Log Transformation**:
-            - Applied to skewed columns such as `MAINTENANCE_COST` to handle outliers and improve distribution.
+        ### Data Transformation Steps for Vehicle Maintenance Dataset:
+        1. **Fix Battery Status Encoding**:
+            - The `Battery_Status` column is ordinal and is encoded using `OrdinalEncoder`, with categories ordered as `['Weak', 'Good', 'New']`. This assigns integer values: `Weak = 0`, `Good = 1`, and `New = 2`.
+        2. **Drop Original Categorical Columns**:
+            - The original categorical columns that have been encoded or are not needed for further analysis are dropped. These include:
+              - `Maintenance_History`, `Owner_Type`, `Tire_Condition`, `Brake_Condition`, `Battery_Status`.
+        3. **One-Hot Encoding for Nominal Categorical Variables**:
+            - One-hot encoding is applied to nominal categorical columns such as:
+              - `Vehicle_Model`, `Fuel_Type`, `Transmission_Type`.
+            - This creates binary columns for each category within these columns.
+        4. **Transform Date Columns to Numeric Features**:
+            - The `Last_Service_Date` and `Warranty_Expiry_Date` columns are transformed into numerical features:
+              - `days_since_service`: The number of days since the last service date relative to a fixed date (`2024-03-01`).
+              - `days_until_warranty_expires`: The number of days until the warranty expires relative to the fixed date.
+            - The original date columns are dropped after transformation.
+        5. **Scale Numeric Columns**:
+            - Standard scaling is applied to the following numeric columns:
+              - `Mileage`, `Reported_Issues`, `Vehicle_Age`, `Engine_Size`, `Odometer_Reading`, `Insurance_Premium`, `Service_History`, `Accident_History`, `Fuel_Efficiency`, `days_since_service`, `days_until_warranty_expires`.
+            - This scales the values of these columns to have zero mean and unit variance.
+        6. **Remove Outliers (Z-Score Threshold)**:
+            - Outliers are removed from numeric columns using a Z-score threshold of 3. Any rows with Z-scores greater than 3 for any numeric column are excluded from the dataset.
+        7. **Keep Coded Columns As Is**:
+            - Coded columns such as `Maintenance_History_Code`, `Owner_Type_Code`, `Tire_Condition_Code`, `Brake_Condition_Code`, and `Battery_Status_Code` are retained as-is.
         """
     
     # Display transformation steps documentation
