@@ -43,6 +43,7 @@ insurance_encoded = load_dataset("insurance_encoded.csv")
 features_encoded = load_dataset("features_encoded.csv")
 maintenance_encoded = load_dataset("maintenance_encoded.csv")
 
+
 # Check for dataset loading errors and show relevant messages
 if car_insurance_claim is None:
     st.error("Error: Car Insurance Claims Data could not be loaded. Please check the file path.")
