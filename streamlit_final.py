@@ -712,10 +712,46 @@ def show_data_merging():
         st.markdown("""
         **Steps:**
         1. **Check Class Imbalance**:
-            - Analyzed target variable distribution.
-        2. **Apply SMOTE Balancing**:
-            - Used Synthetic Minority Oversampling Technique (SMOTE) to handle class imbalance.
+            - We analyzed the class distribution of target variables before SMOTE balancing.
+        2. **SMOTE Balancing**:
+            - The Synthetic Minority Oversampling Technique (SMOTE) was applied to handle class imbalance.
+            - This step was performed prior to this stage, and the resulting balanced dataset is already available for further analysis.
         """)
+
+        # List of columns to balance
+        columns_to_balance = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
+    
+        for col in columns_to_balance:
+            # Analyzing class imbalance before SMOTE (in the original dataset)
+            class_distribution_before = merged_dataset_no_duplicates[col].value_counts()
+            st.subheader(f"Class Distribution Before SMOTE Balancing for {col}")
+            # Pie chart for before SMOTE
+            st.subheader(f"Class Distribution Before SMOTE for {col}")
+            st.pyplot(plot_pie_chart(class_distribution_before))
+
+            # Pie chart for after SMOTE (from balanced dataset)
+            class_distribution_after = balanced_dataset[col].value_counts()
+            st.subheader(f"Class Distribution After SMOTE for {col}")
+            st.pyplot(plot_pie_chart(class_distribution_after))
+
+            # Display counts table before and after SMOTE
+            st.subheader(f"Class Distribution Counts for {col}")
+            before_after_counts = pd.DataFrame({
+                'Before SMOTE': class_distribution_before,
+                'After SMOTE': class_distribution_after
+            }).fillna(0).astype(int)
+            st.dataframe(before_after_counts)
+
+        # Display balanced dataset (sample)
+        st.subheader("Balanced Dataset After SMOTE")
+        st.dataframe(balanced_dataset.head())
+        
+    # Function to plot pie chart
+    def plot_pie_chart(class_distribution):
+        fig, ax = plt.subplots()
+        ax.pie(class_distribution, labels=class_distribution.index, autopct='%1.1f%%', startangle=90)
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        return fig
 
         
 
