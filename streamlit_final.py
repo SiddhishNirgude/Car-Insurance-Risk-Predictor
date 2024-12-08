@@ -34,7 +34,7 @@ def load_dataset(file_path):
         return None
 
 # GitHub raw URLs for the datasets
-balanced_data_url = "https://raw.githubusercontent.com/username/repository/branch/path/to/balanced_dataset.csv"
+balanced_data_url = "https://raw.githubusercontent.com/SiddhishNirgude/Car-Insurance-Risk-Predictor/refs/heads/main/balanced_dataset.csv"
 
 # Load datasets using URLs (adjusted to GitHub URLs)
 balanced_data = load_dataset(balanced_data_url)
