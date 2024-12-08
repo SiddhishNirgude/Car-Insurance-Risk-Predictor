@@ -38,6 +38,11 @@ features_induced_missing = load_dataset("features_missing.csv")
 maintenance_after_imputation = load_dataset("maintenance_after_imputation.csv")
 merged_dataset = load_dataset("final_integrated_dataset.csv")
 
+# Add the new datasets
+insurance_encoded = load_dataset("insurance_encoded.csv")
+features_encoded = load_dataset("features_encoded.csv")
+maintenance_encoded = load_dataset("maintenance_encoded.csv")
+
 # Check for dataset loading errors and show relevant messages
 if car_insurance_claim is None:
     st.error("Error: Car Insurance Claims Data could not be loaded. Please check the file path.")
@@ -61,6 +66,12 @@ if maintenance_after_imputation is None:
     st.error("Error: After Imputation Vehicle Maintenance Data could not be loaded. Please check the file path.")
 if merged_dataset is None:
     st.error("Error: Merged dataset could not be loaded. Please check the file path.")
+if insurance_encoded is None:
+    st.error("Error: Encoded Insurance Data could not be loaded. Please check the file path.")
+if features_encoded is None:
+    st.error("Error: Encoded Features Data could not be loaded. Please check the file path.")
+if maintenance_encoded is None:
+    st.error("Error: Encoded Maintenance Data could not be loaded. Please check the file path.")
 
 
 
