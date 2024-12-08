@@ -441,7 +441,7 @@ def show_data_cleaning_steps():
         st.write(merged_dataset.head())
 
 def show_missingness_analysis():
-    st.title("Data Merging & Missingness Analysis")
+    st.title("Data Missingness Analysis")
 
     # Dropdown to select the dataset
     dataset_option = st.selectbox(
