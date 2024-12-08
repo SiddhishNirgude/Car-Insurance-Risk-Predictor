@@ -703,28 +703,7 @@ def show_data_merging():
             - Used Synthetic Minority Oversampling Technique (SMOTE) to handle class imbalance.
         """)
 
-        # Analyzing class imbalance before SMOTE
-        class_distribution_before = final_integrated_df_cleaned['target_column'].value_counts()
-        st.subheader("Class Distribution Before Balancing")
-        st.bar_chart(class_distribution_before)
-
-        # Apply SMOTE
-        smote = SMOTE(random_state=42)
-        X = final_integrated_df_cleaned.drop(columns=['target_column'])
-        y = final_integrated_df_cleaned['target_column']
-        X_resampled, y_resampled = smote.fit_resample(X, y)
-
-        # Combine resampled data
-        balanced_dataset = pd.concat([pd.DataFrame(X_resampled), pd.Series(y_resampled, name='target_column')], axis=1)
-
-        # Analyzing class imbalance after SMOTE
-        class_distribution_after = balanced_dataset['target_column'].value_counts()
-        st.subheader("Class Distribution After Balancing")
-        st.bar_chart(class_distribution_after)
-
-        # Display balanced dataset
-        st.subheader("Dataset After SMOTE Balancing")
-        st.dataframe(balanced_dataset.head())
+        
 
 
 
