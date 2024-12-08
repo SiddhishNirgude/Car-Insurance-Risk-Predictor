@@ -41,7 +41,7 @@ merged_dataset = load_dataset("final_integrated_dataset.csv")
 # Add the new datasets
 insurance_encoded = load_dataset("insurance_encoded.csv")
 features_encoded = load_dataset("features_encoded.csv")
-maintenance_encoded = load_dataset("Encoded_Data/maintenance_encoded.csv")
+maintenance_encoded = load_dataset(r"Encoded_Data/maintenance_encoded.csv")
 
 # Check for dataset loading errors and show relevant messages
 if car_insurance_claim is None:
