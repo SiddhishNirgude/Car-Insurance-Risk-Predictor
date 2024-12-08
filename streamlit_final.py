@@ -115,7 +115,7 @@ def show_home_page():
         """)
     
     with col2:
-        st.image("Imageof-Auto-Insurance.jpg", caption="Car Insurance Analytics")
+        st.image("images/Imageof-Auto-Insurance.jpg", caption="Car Insurance Analytics")
 
     # Data Sources
     st.header("Data Sources and Integration")
