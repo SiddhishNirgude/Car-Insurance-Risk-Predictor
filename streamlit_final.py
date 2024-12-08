@@ -19,12 +19,25 @@ st.set_page_config(
 @st.cache_data
 def load_dataset(file_path):
     try:
-        data = pd.read_csv(file_path)
+        # Check if the file is a URL or local path
+        if file_path.startswith('http'):
+            data = pd.read_csv(file_path)  # If it's a URL, load it directly
+        else:
+            # Local file loading
+            data = pd.read_csv(file_path)
         return data
     except FileNotFoundError as e:
         st.error(f"File not found: {file_path}")
         return None
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
+        return None
 
+# GitHub raw URLs for the datasets
+balanced_data_url = "https://raw.githubusercontent.com/username/repository/branch/path/to/balanced_dataset.csv"
+
+# Load datasets using URLs (adjusted to GitHub URLs)
+balanced_data = load_dataset(balanced_data_url)
 # Load datasets
 car_insurance_claim = load_dataset("car_insurance_claim.csv")
 vehicle_features_data = load_dataset("Vehicle features data.csv")
@@ -42,7 +55,7 @@ merged_dataset = load_dataset("final_integrated_dataset.csv")
 insurance_encoded = load_dataset("insurance_encoded.csv")
 features_encoded = load_dataset("features_encoded.csv")
 maintenance_encoded = load_dataset("maintenance_encoded.csv")
-balanced_data =  load_dataset("balanced_dataset.csv")
+
 
 
 # Check for dataset loading errors and show relevant messages
