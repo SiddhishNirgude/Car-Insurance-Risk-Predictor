@@ -651,10 +651,10 @@ def show_data_merging():
         3. **Final Integrated Dataset**:
             - Only rows with matching `policy_id_no` across all datasets were retained.
         """)
-        # Assuming `final_integrated_df` is already loaded
+        # Assuming `merged_dataset` is already loaded
         st.subheader("Final Integrated Dataset")
-        st.dataframe(final_integrated_df.head())
-        st.write("Shape of the final integrated dataset:", final_integrated_df.shape)
+        st.dataframe(merged_dataset.head())
+        st.write("Shape of the final integrated dataset:", merged_dataset.shape)
 
     # Cleaning After Integration Tab
     with tab2:
@@ -670,10 +670,10 @@ def show_data_merging():
         """)
 
         # Cleaning: Removing duplicates
-        final_integrated_df_no_duplicates = final_integrated_df.drop_duplicates()
+        merged_dataset_no_duplicates = merged_dataset.drop_duplicates()
         st.subheader("Cleaned Dataset (After Removing Duplicates)")
-        st.write("Shape after removing duplicates:", final_integrated_df_no_duplicates.shape)
-        st.dataframe(final_integrated_df_no_duplicates.head())
+        st.write("Shape after removing duplicates:", merged_dataset_no_duplicates.shape)
+        st.dataframe(merged_dataset_no_duplicates.head())
 
         # Columns to drop
         columns_to_drop = [
@@ -684,12 +684,12 @@ def show_data_merging():
             'Fuel_Type_Electric', 'Fuel_Type_Petrol', 'Transmission_Type_Manual', 
             'days_since_service', 'days_until_warranty_expires'
         ]
-        final_integrated_df_cleaned = final_integrated_df_no_duplicates.drop(columns=columns_to_drop)
+        merged_dataset_cleaned = merged_dataset_no_duplicates.drop(columns=columns_to_drop)
 
         # Displaying datasets after dropping unnecessary columns
         st.subheader("Cleaned Dataset (After Dropping Unnecessary Columns)")
-        st.write("Shape of the cleaned dataset:", final_integrated_df_cleaned.shape)
-        st.dataframe(final_integrated_df_cleaned.head())
+        st.write("Shape of the cleaned dataset:", merged_dataset_cleaned.shape)
+        st.dataframe(merged_dataset_cleaned.head())
         st.write("Columns dropped during cleaning:")
         st.write(columns_to_drop)
 
