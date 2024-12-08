@@ -34,7 +34,7 @@ def load_dataset(file_path):
         return None
 
 # GitHub raw URLs for the datasets
-balanced_data_url = "https://raw.githubusercontent.com/SiddhishNirgude/Car-Insurance-Risk-Predictor/refs/heads/main/balanced_dataset.csv"
+balanced_data_url = "https://raw.githubusercontent.com/SiddhishNirgude/Car-Insurance-Risk-Predictor/refs/heads/main/balanced_data.csv"
 
 # Load datasets using URLs (adjusted to GitHub URLs)
 balanced_data = load_dataset(balanced_data_url)
@@ -730,7 +730,7 @@ def show_data_merging():
             st.pyplot(plot_pie_chart(class_distribution_before))
 
             # Pie chart for after SMOTE (from balanced dataset)
-            class_distribution_after = balanced_dataset[col].value_counts()
+            class_distribution_after = balanced_data[col].value_counts()
             st.subheader(f"Class Distribution After SMOTE for {col}")
             st.pyplot(plot_pie_chart(class_distribution_after))
 
@@ -744,7 +744,7 @@ def show_data_merging():
 
         # Display balanced dataset (sample)
         st.subheader("Balanced Dataset After SMOTE")
-        st.dataframe(balanced_dataset.head())
+        st.dataframe(balanced_data.head())
 
 # Function to plot pie chart
 def plot_pie_chart(class_distribution):
