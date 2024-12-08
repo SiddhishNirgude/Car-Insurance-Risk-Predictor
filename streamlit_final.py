@@ -632,67 +632,49 @@ def show_data_transformations():
 
 def show_data_merging():
     """
-    Displays the steps involved in the data integration process and the resulting dataset.
-    This function explains how datasets were merged, cleaned, and preprocessed after integration.
+    Displays the steps involved in data integration, cleaning, and transformation with Streamlit tabs.
     """
-    st.header("Data Integration Process")
-    st.markdown("""
-    ### Steps for Data Integration:
-    1. **Adding Unique Identifier (`policy_id_no`)**:
-        - Each dataset was assigned a unique identifier column, `policy_id_no`, ensuring at least 10,000 unique values.
-        - This column acted as a common key for merging datasets.
 
-    2. **Merging Datasets**:
-        - **Insurance Data**: Merged with vehicle features using an inner join on `policy_id_no`.
-        - The result was further merged with vehicle maintenance data using another inner join on `policy_id_no`.
-        - This approach ensured that only records with matching `policy_id_no` across all datasets were included in the final integrated dataset.
+    # Create tabs for each section
+    tab1, tab2, tab3 = st.tabs(["Data Integration", "Cleaning After Integration", "Data Transformation"])
 
-    3. **Shape of the Final Merged Dataset**:
-        - After merging, the final dataset's shape was checked to ensure proper integration.
-
-    ### Steps for Cleaning After Integration:
-    1. **Removing Duplicate Rows**:
-        - Duplicates were identified and removed to ensure data consistency.
-    
-    2. **Checking and Handling Missing Values**:
-        - Missing values in each column were identified, and the total count and percentage were calculated.
-        - Rows with missing values were isolated for further analysis.
-
-    3. **Dropping Unnecessary Columns**:
-        - Redundant or irrelevant columns were removed to reduce noise in the dataset. These included:
-            - Unique identifiers (e.g., `ID`), calculated columns (e.g., `policy_tenure`), and redundant categorical features.
-
-    ### Data Transformation After Integration:
-    - The transformed dataset involved handling skewed distributions, normalizing data, and encoding categorical features for machine learning models.
-    """)
-
-    # Load the final integrated dataset
-    try:
-        final_integrated_df = merged_dataset
+    # Data Integration Tab
+    with tab1:
+        st.header("Steps for Data Integration")
+        st.markdown("""
+        **Steps:**
+        1. **Adding Unique Identifiers (`policy_id_no`)**:
+            - Unique IDs were added to ensure datasets could be merged accurately.
+        2. **Merging Datasets**:
+            - Insurance, features, and maintenance datasets were merged using `policy_id_no` as the key.
+        3. **Final Integrated Dataset**:
+            - Only rows with matching `policy_id_no` across all datasets were retained.
+        """)
+        # Assuming `final_integrated_df` is already loaded
         st.subheader("Final Integrated Dataset")
         st.dataframe(final_integrated_df.head())
-
-        # Display shape of the dataset
         st.write("Shape of the final integrated dataset:", final_integrated_df.shape)
 
-        # Clean the dataset by removing duplicates
-        final_integrated_df_no_duplicates = final_integrated_df.drop_duplicates()
-        st.write("Shape after removing duplicates:", final_integrated_df_no_duplicates.shape)
+    # Cleaning After Integration Tab
+    with tab2:
+        st.header("Steps for Cleaning After Integration")
+        st.markdown("""
+        **Steps:**
+        1. **Removing Duplicates**:
+            - Duplicate rows were removed to ensure data consistency.
+        2. **Checking for Missing Values**:
+            - Missing data analysis was performed, identifying columns with null values.
+        3. **Dropping Unnecessary Columns**:
+            - Irrelevant columns were removed to streamline the dataset.
+        """)
 
-        # Display cleaned dataset
+        # Cleaning: Removing duplicates
+        final_integrated_df_no_duplicates = final_integrated_df.drop_duplicates()
         st.subheader("Cleaned Dataset (After Removing Duplicates)")
+        st.write("Shape after removing duplicates:", final_integrated_df_no_duplicates.shape)
         st.dataframe(final_integrated_df_no_duplicates.head())
 
-        # Check for missing values
-        missing_data = final_integrated_df_no_duplicates.isnull().sum()
-        total_missing = missing_data.sum()
-
-        st.write("Total missing values in the dataset:", total_missing)
-        if total_missing > 0:
-            st.write("Columns with missing values and their counts:")
-            st.dataframe(missing_data[missing_data > 0])
-
-        # Display remaining columns after dropping unnecessary ones
+        # Columns to drop
         columns_to_drop = [
             'ID', 'BLUEBOOK', 'RED_CAR', 'policy_id', 'policy_tenure', 
             'age_of_car', 'age_of_policyholder', 'population_density', 
@@ -703,14 +685,46 @@ def show_data_merging():
         ]
         final_integrated_df_cleaned = final_integrated_df_no_duplicates.drop(columns=columns_to_drop)
 
+        # Displaying datasets after dropping unnecessary columns
         st.subheader("Cleaned Dataset (After Dropping Unnecessary Columns)")
         st.write("Shape of the cleaned dataset:", final_integrated_df_cleaned.shape)
         st.dataframe(final_integrated_df_cleaned.head())
-        # Display list of dropped columns
-        st.write("Columns that were dropped during the cleaning process:")
+        st.write("Columns dropped during cleaning:")
         st.write(columns_to_drop)
-    except FileNotFoundError:
-        st.error("The file 'final_integrated_dataset.csv' was not found. Please ensure the dataset is available.")
+
+    # Data Transformation Tab
+    with tab3:
+        st.header("Data Transformation After Integration")
+        st.markdown("""
+        **Steps:**
+        1. **Check Class Imbalance**:
+            - Analyzed target variable distribution.
+        2. **Apply SMOTE Balancing**:
+            - Used Synthetic Minority Oversampling Technique (SMOTE) to handle class imbalance.
+        """)
+
+        # Analyzing class imbalance before SMOTE
+        class_distribution_before = final_integrated_df_cleaned['target_column'].value_counts()
+        st.subheader("Class Distribution Before Balancing")
+        st.bar_chart(class_distribution_before)
+
+        # Apply SMOTE
+        smote = SMOTE(random_state=42)
+        X = final_integrated_df_cleaned.drop(columns=['target_column'])
+        y = final_integrated_df_cleaned['target_column']
+        X_resampled, y_resampled = smote.fit_resample(X, y)
+
+        # Combine resampled data
+        balanced_dataset = pd.concat([pd.DataFrame(X_resampled), pd.Series(y_resampled, name='target_column')], axis=1)
+
+        # Analyzing class imbalance after SMOTE
+        class_distribution_after = balanced_dataset['target_column'].value_counts()
+        st.subheader("Class Distribution After Balancing")
+        st.bar_chart(class_distribution_after)
+
+        # Display balanced dataset
+        st.subheader("Dataset After SMOTE Balancing")
+        st.dataframe(balanced_dataset.head())
 
 
 
