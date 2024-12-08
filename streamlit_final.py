@@ -42,7 +42,7 @@ merged_dataset = load_dataset("final_integrated_dataset.csv")
 insurance_encoded = load_dataset("insurance_encoded.csv")
 features_encoded = load_dataset("features_encoded.csv")
 maintenance_encoded = load_dataset("maintenance_encoded.csv")
-final_integrated_dataset = load_dataset("final_integrated_dataset.csv")
+
 
 # Check for dataset loading errors and show relevant messages
 if car_insurance_claim is None:
@@ -73,8 +73,7 @@ if features_encoded is None:
     st.error("Error: Encoded Features Data could not be loaded. Please check the file path.")
 if maintenance_encoded is None:
     st.error("Error: Encoded Maintenance Data could not be loaded. Please check the file path.")
-if final_integrated_dataset is None:
-    st.error("Error: Final Integrated Data could not be loaded. Please check the file path.")
+
 
 
 # --- TOP-LEVEL NAVIGATION ---
@@ -668,7 +667,7 @@ def show_data_merging():
 
     # Load the final integrated dataset
     try:
-        
+        final_integrated_df = merged_dataset
         st.subheader("Final Integrated Dataset")
         st.dataframe(final_integrated_df.head())
 
