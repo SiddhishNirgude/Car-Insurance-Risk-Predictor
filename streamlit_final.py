@@ -888,8 +888,7 @@ def show_eda():
     tab1, tab2, tab3, tab4 = st.tabs([
         "Univariate Analysis", 
         "Bivariate Analysis",
-        "Multivariate Analysis", 
-        "Feature Relationships"
+        "Multivariate Analysis"
     ])
 
     # Univariate Analysis Tab
@@ -1106,31 +1105,7 @@ def show_eda():
             # Placeholder for pattern discovery
             st.write("Pattern analysis coming soon")
 
-    # Feature Relationships Tab
-    with tab4:
-        st.header("Feature Relationships")
-        
-        # Create sub-tabs for different relationship analyses
-        rel_tab1, rel_tab2, rel_tab3 = st.tabs([
-            "Interactive Scatter Matrix",
-            "Feature Importance",
-            "Hypothesis Testing"
-        ])
-        
-        with rel_tab1:
-            st.subheader("Interactive Feature Analysis")
-            # Placeholder for interactive analysis
-            st.write("Interactive analysis coming soon")
-            
-        with rel_tab2:
-            st.subheader("Feature Importance Analysis")
-            # Placeholder for feature importance
-            st.write("Feature importance analysis coming soon")
-            
-        with rel_tab3:
-            st.subheader("Hypothesis Testing")
-            # Placeholder for hypothesis testing
-            st.write("Hypothesis testing coming soon")
+
 
 def show_correlation_analysis():
     st.title("Correlation Analysis")
