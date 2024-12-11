@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
+from scipy.stats import gaussian_kde
 from sklearn.impute import KNNImputer
 
 # Page configuration
