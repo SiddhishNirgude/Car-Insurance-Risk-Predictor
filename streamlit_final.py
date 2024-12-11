@@ -2550,7 +2550,7 @@ def show_eda():
                 - NCAP rating influence on claim rates
                 - Effectiveness of different safety features
                 - Combined safety feature implications
-                """
+                """)
 
     # Multivariate Analysis Tab
     with tab3:
