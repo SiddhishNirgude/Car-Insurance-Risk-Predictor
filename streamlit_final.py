@@ -840,7 +840,124 @@ def plot_pie_chart(class_distribution):
 # Placeholder functions for additional pages
 def show_eda():
     st.title("Exploratory Data Analysis")
-    st.write("EDA content coming soon!")
+    
+    # Create main tabs for different analysis types
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Univariate Analysis", 
+        "Bivariate Analysis",
+        "Multivariate Analysis", 
+        "Feature Relationships"
+    ])
+
+    # Univariate Analysis Tab
+    with tab1:
+        st.header("Univariate Analysis")
+        
+        # Create sub-tabs for different variable groups
+        uni_tab1, uni_tab2, uni_tab3, uni_tab4 = st.tabs([
+            "Customer Demographics",
+            "Vehicle Characteristics",
+            "Risk Indicators",
+            "Maintenance Metrics"
+        ])
+        
+        with uni_tab1:
+            st.subheader("Customer Demographics Analysis")
+            # Placeholder for demographic visualizations
+            st.write("Demographics visualizations coming soon")
+            
+        with uni_tab2:
+            st.subheader("Vehicle Characteristics Analysis")
+            # Placeholder for vehicle characteristics
+            st.write("Vehicle analysis coming soon")
+            
+        with uni_tab3:
+            st.subheader("Risk Indicators Analysis")
+            # Placeholder for risk indicators
+            st.write("Risk analysis coming soon")
+            
+        with uni_tab4:
+            st.subheader("Maintenance Metrics Analysis")
+            # Placeholder for maintenance metrics
+            st.write("Maintenance analysis coming soon")
+
+    # Bivariate Analysis Tab
+    with tab2:
+        st.header("Bivariate Analysis")
+        
+        # Create sub-tabs for different target variables
+        bi_tab1, bi_tab2, bi_tab3 = st.tabs([
+            "CLAIM_FLAG Analysis",
+            "Need_Maintenance Analysis",
+            "is_claim Analysis"
+        ])
+        
+        with bi_tab1:
+            st.subheader("Claims Analysis")
+            # Placeholder for claims analysis
+            st.write("Claims analysis coming soon")
+            
+        with bi_tab2:
+            st.subheader("Maintenance Analysis")
+            # Placeholder for maintenance analysis
+            st.write("Maintenance analysis coming soon")
+            
+        with bi_tab3:
+            st.subheader("Claim Status Analysis")
+            # Placeholder for claim status analysis
+            st.write("Claim status analysis coming soon")
+
+    # Multivariate Analysis Tab
+    with tab3:
+        st.header("Multivariate Analysis")
+        
+        # Create sub-tabs for different multivariate analyses
+        multi_tab1, multi_tab2, multi_tab3 = st.tabs([
+            "Correlation Analysis",
+            "Dimensionality Reduction",
+            "Pattern Discovery"
+        ])
+        
+        with multi_tab1:
+            st.subheader("Correlation Analysis")
+            # Placeholder for correlation analysis
+            st.write("Correlation analysis coming soon")
+            
+        with multi_tab2:
+            st.subheader("Dimensionality Reduction")
+            # Placeholder for dimensionality reduction
+            st.write("PCA analysis coming soon")
+            
+        with multi_tab3:
+            st.subheader("Pattern Discovery")
+            # Placeholder for pattern discovery
+            st.write("Pattern analysis coming soon")
+
+    # Feature Relationships Tab
+    with tab4:
+        st.header("Feature Relationships")
+        
+        # Create sub-tabs for different relationship analyses
+        rel_tab1, rel_tab2, rel_tab3 = st.tabs([
+            "Interactive Scatter Matrix",
+            "Feature Importance",
+            "Hypothesis Testing"
+        ])
+        
+        with rel_tab1:
+            st.subheader("Interactive Feature Analysis")
+            # Placeholder for interactive analysis
+            st.write("Interactive analysis coming soon")
+            
+        with rel_tab2:
+            st.subheader("Feature Importance Analysis")
+            # Placeholder for feature importance
+            st.write("Feature importance analysis coming soon")
+            
+        with rel_tab3:
+            st.subheader("Hypothesis Testing")
+            # Placeholder for hypothesis testing
+            st.write("Hypothesis testing coming soon")
 
 def show_correlation_analysis():
     st.title("Correlation Analysis")
