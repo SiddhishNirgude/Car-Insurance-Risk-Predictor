@@ -1712,8 +1712,8 @@ def show_eda():
         with uni_tab4:
             st.subheader("Maintenance Metrics Analysis")
             
-            # Process maintenance data with our mappings
-            processed_data, condition_colors, maintenance_categories = process_maintenance_metrics(balanced_data_cleaned)
+            # Process maintenance data with our mappings - now capturing all 4 return values
+            processed_data, condition_colors, maintenance_categories, scaled_mappings = process_maintenance_metrics(balanced_data_cleaned)
             
             # Define maintenance-related columns
             maintenance_numeric = [
@@ -1742,15 +1742,12 @@ def show_eda():
                 selected_numeric = st.selectbox(
                     "Select Service Metric",
                     maintenance_numeric,
-                    format_func=lambda x: {
-                        'Service_History': 'Service History Score',
-                        'Fuel_Efficiency': 'Fuel Efficiency Rating',
-                        'Reported_Issues': 'Number of Reported Issues',
-                        'Vehicle_Age': 'Vehicle Age',
-                        'Odometer_Reading': 'Odometer Reading'
-                    }[x],
                     key="maintenance_numeric"
                 )
+                
+                # Using scaled mappings for better labels
+                display_name = scaled_mappings.get(selected_numeric, {}).get('labels', [selected_numeric])[0]
+                st.write(f"Analyzing: {display_name}")
                 
                 # Plot type selector
                 plot_type = st.radio(
@@ -1768,15 +1765,28 @@ def show_eda():
                         name="Distribution"
                     ))
                     
+                    # Add category ranges if available
+                    if selected_numeric in scaled_mappings:
+                        for i, (range_val, label) in enumerate(zip(
+                            scaled_mappings[selected_numeric]['ranges'],
+                            scaled_mappings[selected_numeric]['labels']
+                        )):
+                            fig.add_vline(
+                                x=range_val,
+                                line_dash="dash",
+                                line_color="red",
+                                annotation_text=label
+                            )
+                    
                 else:  # Box Plot
                     fig.add_trace(go.Box(
                         y=processed_data[selected_numeric],
-                        name=selected_numeric,
+                        name=display_name,
                         boxpoints='outliers'
                     ))
                 
                 fig.update_layout(
-                    title=f"{selected_numeric} Analysis",
+                    title=f"{display_name} Analysis",
                     height=400,
                     showlegend=False
                 )
