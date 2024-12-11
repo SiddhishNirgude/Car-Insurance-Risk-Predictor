@@ -3045,12 +3045,14 @@ def show_correlation_analysis():
             top_30_corr = stacked_corr.sort_values('Abs_Correlation', ascending=False).head(30)
             
             # Create bar chart
+            # Create bar chart
             fig = go.Figure(data=[
                 go.Bar(
-                    x=range(len(top_30_corr)),
+                    x=list(top_30_corr.index),  # Convert range to list
                     y=top_30_corr['Correlation'],
                     text=top_30_corr.apply(lambda x: f"{x['Feature 1']} vs {x['Feature 2']}<br>{x['Correlation']:.3f}", axis=1),
                     textposition='auto',
+                    hovertext=top_30_corr.apply(lambda x: f"{x['Feature 1']} vs {x['Feature 2']}<br>Correlation: {x['Correlation']:.3f}", axis=1)
                 )
             ])
             
@@ -3059,7 +3061,9 @@ def show_correlation_analysis():
                 xaxis_title="Correlation Pair Index",
                 yaxis_title="Correlation Value",
                 height=600,
-                showlegend=False
+                showlegend=False,
+                xaxis={'ticktext': [f"Pair {i+1}" for i in range(len(top_30_corr))],
+                       'tickvals': list(range(len(top_30_corr)))}
             )
             
             st.plotly_chart(fig)
