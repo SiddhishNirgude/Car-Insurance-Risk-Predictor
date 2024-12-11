@@ -709,7 +709,7 @@ def show_data_merging():
         st.write(columns_to_drop)
 
     # Data Transformation Tab
-        with tab3:
+    with tab3:
         st.header("Data Transformation After Integration")
         st.markdown("""
         **Steps:**
