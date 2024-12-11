@@ -1263,8 +1263,8 @@ def process_risk_indicators(df):
         1: 'High Urbanicity'
     })
     
-# 4. Accident_History mapping (float ranges to severity categories)
-def map_accident_history(value):
+    # 4. Accident_History mapping (float ranges to severity categories)
+    def map_accident_history(value):
         if value <= 1:
             return 'No Accidents'
         elif value <= 2:
@@ -1273,7 +1273,7 @@ def map_accident_history(value):
             return 'Moderate Accidents'
         else:
             return 'Severe Accidents'
-    
+            
     df_processed['ACCIDENT_HISTORY_CAT'] = df_processed['Accident_History'].apply(map_accident_history)
     
     # Create a color mapping dictionary for accident history categories
@@ -1285,6 +1285,7 @@ def map_accident_history(value):
     }
     
     return df_processed, accident_colors
+
 
 def get_risk_category_descriptions():
     """
