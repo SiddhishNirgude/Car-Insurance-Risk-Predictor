@@ -1918,20 +1918,233 @@ def show_eda():
                         st.write(f"- {status}: {desc}")
 
     # Bivariate Analysis Tab
+# Bivariate Analysis Tab
     with tab2:
         st.header("Bivariate Analysis")
         
         # Create sub-tabs for different target variables
-        bi_tab1, bi_tab2, bi_tab3 = st.tabs([
-            "CLAIM_FLAG Analysis",
-            "Need_Maintenance Analysis",
-            "is_claim Analysis"
+        bi_tab1, bi_tab2, bi_tab3, bi_tab4 = st.tabs([
+            "Claims Analysis (CLAIM_FLAG)",
+            "Maintenance Analysis (Need_Maintenance)",
+            "Insurance Claims (is_claim)",
+            "Cross-Target Analysis"
         ])
         
+        # Claims Analysis Tab
         with bi_tab1:
             st.subheader("Claims Analysis")
-            # Placeholder for claims analysis
-            st.write("Claims analysis coming soon")
+            
+            # Create sections for different analysis types
+            sections = st.tabs([
+                "Demographic Relationships",
+                "Vehicle Characteristics",
+                "Safety Features"
+            ])
+            
+            # 1. Demographic Relationships
+            with sections[0]:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Age vs Claims (Box Plot)
+                    fig_age = go.Figure()
+                    
+                    # Create box plot for each claim category
+                    for claim in [0, 1]:
+                        age_data = balanced_data_cleaned[balanced_data_cleaned['CLAIM_FLAG'] == claim]['AGE']
+                        fig_age.add_trace(go.Box(
+                            y=age_data,
+                            name=f"{'Claim' if claim == 1 else 'No Claim'}",
+                            boxpoints='outliers'
+                        ))
+                    
+                    fig_age.update_layout(
+                        title="Age Distribution by Claim Status",
+                        yaxis_title="Age",
+                        height=400,
+                        showlegend=True
+                    )
+                    
+                    st.plotly_chart(fig_age, use_container_width=True)
+                    
+                    # Education vs Claims (Stacked Bar Chart)
+                    edu_claim = pd.crosstab(
+                        balanced_data_cleaned['EDUCATION'],
+                        balanced_data_cleaned['CLAIM_FLAG'],
+                        normalize='index'
+                    ) * 100
+                    
+                    fig_edu = go.Figure(data=[
+                        go.Bar(name='No Claim', x=edu_claim.index, y=edu_claim[0]),
+                        go.Bar(name='Claim', x=edu_claim.index, y=edu_claim[1])
+                    ])
+                    
+                    fig_edu.update_layout(
+                        barmode='stack',
+                        title="Claims Distribution by Education Level",
+                        xaxis_title="Education Level",
+                        yaxis_title="Percentage",
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig_edu, use_container_width=True)
+                
+                with col2:
+                    # Income vs Claims (Violin Plot)
+                    fig_income = go.Figure()
+                    
+                    for claim in [0, 1]:
+                        income_data = balanced_data_cleaned[balanced_data_cleaned['CLAIM_FLAG'] == claim]['INCOME']
+                        fig_income.add_trace(go.Violin(
+                            y=income_data,
+                            name=f"{'Claim' if claim == 1 else 'No Claim'}",
+                            box_visible=True,
+                            meanline_visible=True
+                        ))
+                    
+                    fig_income.update_layout(
+                        title="Income Distribution by Claim Status",
+                        yaxis_title="Income",
+                        height=400,
+                        showlegend=True
+                    )
+                    
+                    st.plotly_chart(fig_income, use_container_width=True)
+                    
+                    # Occupation vs Claims (Heatmap)
+                    occ_claim = pd.crosstab(
+                        balanced_data_cleaned['OCCUPATION'],
+                        balanced_data_cleaned['CLAIM_FLAG'],
+                        normalize='index'
+                    ) * 100
+                    
+                    fig_occ = go.Figure(data=go.Heatmap(
+                        z=occ_claim.values,
+                        x=['No Claim', 'Claim'],
+                        y=occ_claim.index,
+                        colorscale='RdYlBu',
+                        text=np.round(occ_claim.values, 1),
+                        texttemplate='%{text}%',
+                        textfont={"size": 10},
+                        showscale=True
+                    ))
+                    
+                    fig_occ.update_layout(
+                        title="Claims Percentage by Occupation",
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig_occ, use_container_width=True)
+            
+            # 2. Vehicle Characteristics
+            with sections[1]:
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    # Car Age vs Claims (Box Plot)
+                    fig_car_age = go.Figure()
+                    
+                    for claim in [0, 1]:
+                        car_age_data = balanced_data_cleaned[balanced_data_cleaned['CLAIM_FLAG'] == claim]['CAR_AGE']
+                        fig_car_age.add_trace(go.Box(
+                            y=car_age_data,
+                            name=f"{'Claim' if claim == 1 else 'No Claim'}",
+                            boxpoints='outliers'
+                        ))
+                    
+                    fig_car_age.update_layout(
+                        title="Car Age Distribution by Claim Status",
+                        yaxis_title="Car Age",
+                        height=400,
+                        showlegend=True
+                    )
+                    
+                    st.plotly_chart(fig_car_age, use_container_width=True)
+                
+                with col2:
+                    # Vehicle Type vs Claims (Stacked Bar)
+                    car_types = ['CAR_TYPE_Panel Truck', 'CAR_TYPE_Pickup', 
+                               'CAR_TYPE_SUV', 'CAR_TYPE_Sports Car', 'CAR_TYPE_Van']
+                    
+                    # Get the most common car type for each row
+                    balanced_data_cleaned['CAR_TYPE'] = balanced_data_cleaned[car_types].idxmax(axis=1).str.replace('CAR_TYPE_', '')
+                    
+                    type_claim = pd.crosstab(
+                        balanced_data_cleaned['CAR_TYPE'],
+                        balanced_data_cleaned['CLAIM_FLAG'],
+                        normalize='index'
+                    ) * 100
+                    
+                    fig_type = go.Figure(data=[
+                        go.Bar(name='No Claim', x=type_claim.index, y=type_claim[0]),
+                        go.Bar(name='Claim', x=type_claim.index, y=type_claim[1])
+                    ])
+                    
+                    fig_type.update_layout(
+                        barmode='stack',
+                        title="Claims Distribution by Vehicle Type",
+                        xaxis_title="Vehicle Type",
+                        yaxis_title="Percentage",
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig_type, use_container_width=True)
+            
+            # 3. Safety Features
+            with sections[2]:
+                # Create a list of safety feature columns
+                safety_features = [
+                    'airbags', 'is_esc', 'is_adjustable_steering',
+                    'is_tpms', 'is_parking_sensors', 'is_parking_camera'
+                ]
+                
+                # Calculate claim rates for each safety feature
+                safety_claims = pd.DataFrame()
+                
+                for feature in safety_features:
+                    claim_rates = pd.crosstab(
+                        balanced_data_cleaned[feature],
+                        balanced_data_cleaned['CLAIM_FLAG'],
+                        normalize='index'
+                    ) * 100
+                    safety_claims[feature] = claim_rates[1]  # Get claim rate (1)
+                
+                # Create heatmap for safety features vs claims
+                fig_safety = go.Figure(data=go.Heatmap(
+                    z=safety_claims.T.values,
+                    x=['No', 'Yes'],
+                    y=[feat.replace('is_', '').replace('_', ' ').title() for feat in safety_features],
+                    colorscale='RdYlBu',
+                    text=np.round(safety_claims.T.values, 1),
+                    texttemplate='%{text}%',
+                    textfont={"size": 10},
+                    showscale=True
+                ))
+                
+                fig_safety.update_layout(
+                    title="Claim Rates by Safety Feature",
+                    xaxis_title="Feature Present",
+                    height=500
+                )
+                
+                st.plotly_chart(fig_safety, use_container_width=True)
+                
+                # Add insights
+                st.write("#### Key Insights from Claims Analysis")
+                st.markdown("""
+                1. **Demographic Insights:**
+                   - Age distribution patterns between claim and no-claim groups
+                   - Income levels' relationship with claim likelihood
+                   - Educational and occupational patterns in claims
+                
+                2. **Vehicle Insights:**
+                   - Relationship between car age and claim probability
+                   - Vehicle type preferences and their claim rates
+                
+                3. **Safety Feature Impact:**
+                   - Effectiveness of different safety features
+                   - Correlation between safety features and claim rates
+                """)
             
         with bi_tab2:
             st.subheader("Maintenance Analysis")
