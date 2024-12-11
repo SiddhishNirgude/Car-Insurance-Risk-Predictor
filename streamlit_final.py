@@ -709,16 +709,36 @@ def show_data_merging():
         st.write(columns_to_drop)
 
     # Data Transformation Tab
-    with tab3:
+        with tab3:
         st.header("Data Transformation After Integration")
         st.markdown("""
         **Steps:**
         1. **Check Class Imbalance**:
-            - We analyzed the class distribution of target variables before SMOTE balancing.
-        2. **SMOTE Balancing**:
-            - The Synthetic Minority Oversampling Technique (SMOTE) was applied to handle class imbalance.
-            - This step was performed prior to this stage, and the resulting balanced dataset is already available for further analysis.
+            - We analyzed the class distribution of target variables before SMOTE balancing
+            - Initial analysis showed significant imbalance in CLAIM_FLAG (73.3% vs 26.7%)
+            - Similar imbalances were found in Need_Maintenance and is_claim variables
+            
+        2. **Initial SMOTE Balancing Attempt**:
+            - Applied SMOTE to all target variables simultaneously
+            - This resulted in a significantly large dataset due to multiplicative effect
+            - Dataset size increased beyond practical usage limits
+            
+        3. **Optimized SMOTE Application**:
+            - Revised approach to balance classes more conservatively
+            - Implemented selective SMOTE with controlled ratios
+            - Target ratio was adjusted to maintain reasonable dataset size while improving class balance
+            
+        4. **Final Dataset Optimization**:
+            - Achieved more balanced class distribution (71.1% vs 28.9%)
+            - Maintained manageable dataset size for model training
+            - Preserved data quality while reducing computational overhead
+            
+        **Impact on Model Training**:
+            - The optimized balance improves model's ability to learn from minority classes
+            - Reduced risk of overfitting compared to extreme oversampling
+            - Better generalization potential for real-world predictions
         """)
+
 
         # List of columns to balance
         columns_to_balance = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
