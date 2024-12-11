@@ -2704,8 +2704,7 @@ def show_eda():
                 - Risk factor distribution patterns
                 """)
 
-    # Multivariate Analysis Tab
-    with tab3:
+
     # Multivariate Analysis Tab
     with tab3:
         st.header("Multivariate Analysis")
