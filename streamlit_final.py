@@ -2706,242 +2706,155 @@ def show_eda():
 
     # Multivariate Analysis Tab
     with tab3:
+    # Multivariate Analysis Tab
+    with tab3:
         st.header("Multivariate Analysis")
         
-        # Create sub-tabs for different multivariate analyses
         multi_tab1, multi_tab2, multi_tab3 = st.tabs([
-            "Correlation Analysis",
-            "Dimensionality Reduction",
-            "Pattern Discovery"
+            "3D Surface Analysis",
+            "Multiple Line Slopes",
+            "Relationship Patterns"
         ])
+        
+        # 3D Surface Analysis Tab
+        with multi_tab1:
+            st.subheader("3D Surface Analysis with Plane Fitting")
+            
+            # Variable selection
+            numeric_cols = balanced_data.select_dtypes(include=['float64', 'int64']).columns
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                x_var = st.selectbox("Select X Variable", numeric_cols, index=0)
+            with col2:
+                y_var = st.selectbox("Select Y Variable", numeric_cols, index=1)
+            with col3:
+                z_var = st.selectbox("Select Z Variable", numeric_cols, index=2)
+            
+            # Color selection
+            color_var = st.selectbox("Color by Target", ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim'])
+            
+            # Create 3D scatter with fitted plane
+            if x_var and y_var and z_var:
+                # Prepare data
+                x = balanced_data[x_var]
+                y = balanced_data[y_var]
+                z = balanced_data[z_var]
+                colors = balanced_data[color_var]
+                
+                # Fit plane
+                A = np.column_stack((x, y, np.ones_like(x)))
+                coefficients, residuals, rank, s = np.linalg.lstsq(A, z, rcond=None)
+                
+                # Create plane surface
+                x_range = np.linspace(x.min(), x.max(), 10)
+                y_range = np.linspace(y.min(), y.max(), 10)
+                X, Y = np.meshgrid(x_range, y_range)
+                Z = coefficients[0] * X + coefficients[1] * Y + coefficients[2]
+                
+                # Create figure
+                fig = go.Figure()
+                
+                # Add scatter points
+                fig.add_trace(go.Scatter3d(
+                    x=x, y=y, z=z,
+                    mode='markers',
+                    marker=dict(
+                        size=5,
+                        color=colors,
+                        colorscale='Viridis',
+                        showscale=True
+                    ),
+                    name='Data Points'
+                ))
+                
+                # Add fitted plane
+                fig.add_trace(go.Surface(
+                    x=x_range,
+                    y=y_range,
+                    z=Z,
+                    opacity=0.7,
+                    colorscale='Blues',
+                    showscale=False,
+                    name='Fitted Plane'
+                ))
+                
+                # Update layout
+                fig.update_layout(
+                    title=f"3D Surface Analysis: {x_var} vs {y_var} vs {z_var}",
+                    scene=dict(
+                        xaxis_title=x_var,
+                        yaxis_title=y_var,
+                        zaxis_title=z_var
+                    ),
+                    height=700
+                )
+                
+                # Calculate and display slopes
+                slope_x = coefficients[0]
+                slope_y = coefficients[1]
+                intercept = coefficients[2]
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display slope analysis
+                st.subheader("Slope Analysis")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"**Slope with respect to {x_var}:** {slope_x:.4f}")
+                    st.write(f"**Slope with respect to {y_var}:** {slope_y:.4f}")
+                    st.write(f"**Intercept:** {intercept:.4f}")
+                
+                with col2:
+                    # Interpret slopes
+                    st.write("**Relationship Interpretation:**")
+                    
+                    def interpret_slope(slope, var):
+                        if abs(slope) < 0.1:
+                            return f"Weak relationship with {var}"
+                        elif abs(slope) < 0.5:
+                            return f"Moderate relationship with {var}"
+                        else:
+                            return f"Strong relationship with {var}"
+                    
+                    st.write(interpret_slope(slope_x, x_var))
+                    st.write(interpret_slope(slope_y, y_var))
+                    
+                    # Calculate R-squared
+                    z_pred = coefficients[0] * x + coefficients[1] * y + coefficients[2]
+                    r2 = 1 - (np.sum((z - z_pred) ** 2) / np.sum((z - z.mean()) ** 2))
+                    st.write(f"**R-squared:** {r2:.4f}")
+                
+                # Add key insights
+                st.subheader("Key Insights")
+                insights = []
+                
+                # Slope direction insights
+                if abs(slope_x) > abs(slope_y):
+                    insights.append(f"- {x_var} has a stronger influence on {z_var} than {y_var}")
+                else:
+                    insights.append(f"- {y_var} has a stronger influence on {z_var} than {x_var}")
+                
+                # R-squared insight
+                if r2 > 0.7:
+                    insights.append("- The relationship is highly linear")
+                elif r2 > 0.4:
+                    insights.append("- The relationship shows moderate linearity")
+                else:
+                    insights.append("- The relationship appears to be non-linear")
+                
+                # Target variable insight
+                avg_by_target = balanced_data.groupby(color_var)[z_var].mean()
+                diff = avg_by_target.max() - avg_by_target.min()
+                if diff > balanced_data[z_var].std():
+                    insights.append(f"- Significant variation in {z_var} across different {color_var} groups")
+                
+                for insight in insights:
+                    st.write(insight)
         
 
 # Multivariate Analysis - Correlation Analysis
 
-        with multi_tab1:
-            st.header("Correlation Analysis")
-            
-            # Define feature groups with comprehensive columns
-            feature_groups = {
-                'Demographics': [
-                    'AGE', 'INCOME', 'HOME_VAL', 'YOJ', 'TRAVTIME', 'KIDSDRIV', 'HOMEKIDS',
-                    'PARENT1', 'MSTATUS', 'GENDER'
-                ],
-                
-                'Vehicle Specifications': [
-                    'CAR_AGE', 'max_power', 'max_torque', 'displacement', 'Engine_Size',
-                    'turning_radius', 'length', 'width', 'height', 'gross_weight',
-                    'Mileage', 'Fuel_Efficiency', 'cylinder', 'gear_box'
-                ],
-                
-                'Safety Features': [
-                    'airbags', 'ncap_rating', 'is_brake_assist', 'is_parking_sensors',
-                    'is_tpms', 'is_esc', 'is_parking_camera', 'is_front_fog_lights',
-                    'is_speed_alert', 'is_central_locking', 'is_power_steering',
-                    'is_day_night_rear_view_mirror', 'is_ecw'
-                ],
-                
-                'Risk and Claims': [
-                    'MVR_PTS', 'CLM_FREQ', 'OLDCLAIM', 'CLM_AMT', 'TIF',
-                    'Reported_Issues', 'Accident_History', 'Insurance_Premium'
-                ],
-                
-                'Maintenance Indicators': [
-                    'Vehicle_Age', 'Odometer_Reading', 'Service_History',
-                    'Maintenance_History_Code', 'Tire_Condition_Code',
-                    'Brake_Condition_Code', 'Battery_Status_Code'
-                ],
-                
-                'Vehicle Type Indicators': [
-                    'CAR_TYPE_Panel Truck', 'CAR_TYPE_Pickup', 'CAR_TYPE_SUV',
-                    'CAR_TYPE_Sports Car', 'CAR_TYPE_Van', 'segment_B1', 'segment_B2',
-                    'segment_C1', 'segment_C2', 'segment_Utility', 'fuel_type_Diesel',
-                    'fuel_type_Petrol', 'transmission_type_Manual'
-                ]
-            }
-            
-            # Target variables
-            target_vars = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
-            
-            # Feature Group Correlations
-            st.subheader("Feature Group Correlations")
-            
-            # Create tabs for different feature groups
-            group_tabs = st.tabs(list(feature_groups.keys()))
-            
-            for tab, (group_name, features) in zip(group_tabs, feature_groups.items()):
-                with tab:
-                    try:
-                        # Filter for available columns
-                        valid_features = [f for f in features if f in balanced_data.columns]
-                        
-                        if valid_features:
-                            corr_matrix = balanced_data[valid_features].corr()
-                            
-                            # Create heatmap with improved layout
-                            fig = go.Figure(data=go.Heatmap(
-                                z=corr_matrix,
-                                x=valid_features,
-                                y=valid_features,
-                                colorscale='RdBu',
-                                zmin=-1,
-                                zmax=1,
-                                text=np.round(corr_matrix, 2),
-                                texttemplate='%{text}',
-                                textfont={"size": 10}
-                            ))
-                            
-                            # Update layout for better readability
-                            fig.update_layout(
-                                title=f"{group_name} Features Correlation Heatmap",
-                                height=700,  # Increased height
-                                xaxis={'tickangle': 45},  # Angled labels
-                                margin=dict(t=100, l=100, r=100, b=100)  # Increased margins
-                            )
-                            
-                            st.plotly_chart(fig, use_container_width=True)
-                            
-                            # Add correlation with target variables
-                            st.write("#### Correlation with Target Variables")
-                            target_corr = balanced_data[valid_features + target_vars].corr().loc[target_vars, valid_features]
-                            
-                            # Create heatmap for target correlations
-                            fig_target = go.Figure(data=go.Heatmap(
-                                z=target_corr,
-                                x=valid_features,
-                                y=target_vars,
-                                colorscale='RdBu',
-                                zmin=-1,
-                                zmax=1,
-                                text=np.round(target_corr, 2),
-                                texttemplate='%{text}',
-                                textfont={"size": 10}
-                            ))
-                            
-                            fig_target.update_layout(
-                                title=f"{group_name} Features Correlation with Target Variables",
-                                height=300,
-                                xaxis={'tickangle': 45},
-                                margin=dict(t=100, l=100, r=100, b=100)
-                            )
-                            
-                            st.plotly_chart(fig_target, use_container_width=True)
-                            
-                        else:
-                            st.warning(f"No valid features available for {group_name} group")
-                            
-                    except Exception as e:
-                        st.error(f"Error processing {group_name} group: {str(e)}")
-            
-            # Feature Importance Analysis
-            st.subheader("Feature Importance Analysis")
-            
-            # Get all features
-            all_features = [item for sublist in feature_groups.values() for item in sublist]
-            valid_features = [f for f in all_features if f in balanced_data.columns]
-            
-            # Create two columns for visualization
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                # Top correlations with target variables
-                for target in target_vars:
-                    correlations = []
-                    for feature in valid_features:
-                        try:
-                            corr = balanced_data[feature].corr(balanced_data[target])
-                            correlations.append((feature, abs(corr)))
-                        except:
-                            continue
-                    
-                    # Sort by absolute correlation
-                    correlations.sort(key=lambda x: x[1], reverse=True)
-                    top_correlations = correlations[:15]  # Increased to top 15
-                    
-                    if top_correlations:
-                        features, corr_values = zip(*top_correlations)
-                        
-                        fig = go.Figure(data=[
-                            go.Bar(
-                                x=corr_values,
-                                y=features,
-                                orientation='h',
-                                text=np.round(corr_values, 3),
-                                textposition='auto',
-                            )
-                        ])
-                        
-                        fig.update_layout(
-                            title=f"Top 15 Correlations with {target}",
-                            xaxis_title="Absolute Correlation",
-                            yaxis_title="Feature",
-                            height=500,
-                            margin=dict(l=200)  # Increased left margin for feature names
-                        )
-                        
-                        st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                # Multicollinearity Analysis with improved visualization
-                st.write("#### Multicollinearity Analysis")
-                
-                # Correlation threshold selector
-                corr_threshold = st.slider("Correlation Threshold", 0.5, 1.0, 0.7, 0.05)
-                
-                try:
-                    high_corr_pairs = []
-                    corr_matrix = balanced_data[valid_features].corr()
-                    
-                    for i in range(len(valid_features)):
-                        for j in range(i+1, len(valid_features)):
-                            corr_value = abs(corr_matrix.iloc[i, j])
-                            if corr_value > corr_threshold:
-                                high_corr_pairs.append({
-                                    'Feature 1': valid_features[i],
-                                    'Feature 2': valid_features[j],
-                                    'Correlation': corr_value
-                                })
-                    
-                    if high_corr_pairs:
-                        high_corr_df = pd.DataFrame(high_corr_pairs)
-                        high_corr_df = high_corr_df.sort_values('Correlation', ascending=False)
-                        
-                        st.write(f"Highly Correlated Feature Pairs (|correlation| > {corr_threshold}):")
-                        st.dataframe(high_corr_df.round(3))
-                        
-                        # Add visualization for high correlations
-                        fig = go.Figure(data=[
-                            go.Scatter(
-                                x=high_corr_df['Feature 1'],
-                                y=high_corr_df['Feature 2'],
-                                mode='markers',
-                                marker=dict(
-                                    size=high_corr_df['Correlation'] * 50,
-                                    color=high_corr_df['Correlation'],
-                                    colorscale='Viridis',
-                                    showscale=True
-                                ),
-                                text=high_corr_df['Correlation'].round(3),
-                                hovertemplate="<b>Features:</b><br>%{x}<br>%{y}<br><b>Correlation:</b> %{text}<extra></extra>"
-                            )
-                        ])
-                        
-                        fig.update_layout(
-                            title="Highly Correlated Features",
-                            xaxis_title="Feature 1",
-                            yaxis_title="Feature 2",
-                            height=500,
-                            xaxis={'tickangle': 45}
-                        )
-                        
-                        st.plotly_chart(fig, use_container_width=True)
-                        
-                    else:
-                        st.write(f"No feature pairs with correlation > {corr_threshold} found.")
-                        
-                except Exception as e:
-                    st.error(f"Error in multicollinearity analysis: {str(e)}")
-            
         with multi_tab2:
             st.subheader("Dimensionality Reduction")
             # Placeholder for dimensionality reduction
