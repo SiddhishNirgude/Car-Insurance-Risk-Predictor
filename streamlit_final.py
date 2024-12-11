@@ -960,15 +960,27 @@ def get_risk_category_descriptions():
 
 
 ### D. For maintenance_metric tab
+def group_scaled_values(value, ranges, labels):
+    """
+    Helper function to group scaled values into meaningful categories
+    
+    Args:
+        value: The scaled value to categorize
+        ranges: List of range boundaries
+        labels: List of labels for each range
+        
+    Returns:
+        Appropriate label for the value
+    """
+    for i, r in enumerate(ranges[:-1]):
+        if value <= r:
+            return labels[i]
+    return labels[-1]
+    
 def process_maintenance_metrics(df):
     """
     Process maintenance metric columns to map values back to meaningful categories.
-    
-    Args:
-        df: DataFrame containing the maintenance metric columns
-    
-    Returns:
-        DataFrame with processed maintenance metrics
+    Includes error handling for invalid/missing values.
     """
     df_processed = df.copy()
     
@@ -991,23 +1003,30 @@ def process_maintenance_metrics(df):
         2: '3rd Owner'
     }
     
-    # Map categorical values
-    df_processed['Maintenance_History_CAT'] = df_processed['Maintenance_History_Code'].map(maintenance_history_map)
-    df_processed['Tire_Condition_CAT'] = df_processed['Tire_Condition_Code'].map(condition_map)
-    df_processed['Owner_Type_CAT'] = df_processed['Owner_Type_Code'].map(owner_type_map)
+    # Safely map categorical values
+    def safe_map(series, mapping):
+        # First round to nearest integer and handle NaN
+        rounded = series.fillna(-1).round()
+        # Convert to integer, keeping -1 for NaN
+        integers = rounded.astype(int)
+        # Map values, with -1 mapping to 'Unknown'
+        return integers.map(lambda x: mapping.get(x, 'Unknown'))
     
-    # Handle Brake Condition including potential float values
-    df_processed['Brake_Condition_Code'] = df_processed['Brake_Condition_Code'].round().astype(int)
-    df_processed['Brake_Condition_CAT'] = df_processed['Brake_Condition_Code'].map(condition_map)
+    # Map categorical values with error handling
+    df_processed['Maintenance_History_CAT'] = safe_map(df_processed['Maintenance_History_Code'], maintenance_history_map)
+    df_processed['Tire_Condition_CAT'] = safe_map(df_processed['Tire_Condition_Code'], condition_map)
+    df_processed['Owner_Type_CAT'] = safe_map(df_processed['Owner_Type_Code'], owner_type_map)
     
-    # Handle Battery Status including potential float values
-    df_processed['Battery_Status_Code'] = df_processed['Battery_Status_Code'].round().astype(int)
+    # Handle Brake Condition
+    df_processed['Brake_Condition_CAT'] = safe_map(df_processed['Brake_Condition_Code'], condition_map)
+    
+    # Handle Battery Status
     battery_map = {
         0: 'Weak',
         1: 'Good',
         2: 'New'
     }
-    df_processed['Battery_Status_CAT'] = df_processed['Battery_Status_Code'].map(battery_map)
+    df_processed['Battery_Status_CAT'] = safe_map(df_processed['Battery_Status_Code'], battery_map)
     
     # Create color schemes for visualizations
     condition_colors = {
@@ -1016,7 +1035,8 @@ def process_maintenance_metrics(df):
         'Good': '#2ecc71',
         'Worn out': '#e74c3c',
         'New': '#2ecc71',
-        'Weak': '#e74c3c'
+        'Weak': '#e74c3c',
+        'Unknown': '#95a5a6'  # Gray color for unknown values
     }
     
     # Create category descriptions
@@ -1024,69 +1044,52 @@ def process_maintenance_metrics(df):
         'Maintenance_History': {
             'Poor': 'Irregular or minimal maintenance record',
             'Average': 'Regular but basic maintenance',
-            'Good': 'Comprehensive and timely maintenance'
+            'Good': 'Comprehensive and timely maintenance',
+            'Unknown': 'Maintenance history not available'
         },
         'Tire_Condition': {
             'Worn out': 'Requires immediate replacement',
             'Good': 'Functional with acceptable wear',
-            'New': 'Recently replaced or minimal wear'
+            'New': 'Recently replaced or minimal wear',
+            'Unknown': 'Condition not assessed'
         },
         'Brake_Condition': {
             'Worn out': 'Requires immediate service',
             'Good': 'Functional with normal wear',
-            'New': 'Recently serviced or minimal wear'
+            'New': 'Recently serviced or minimal wear',
+            'Unknown': 'Condition not assessed'
         },
         'Battery_Status': {
             'Weak': 'May need replacement soon',
             'Good': 'Functioning properly',
-            'New': 'Recently replaced or excellent condition'
+            'New': 'Recently replaced or excellent condition',
+            'Unknown': 'Status not assessed'
         },
         'Owner_Type': {
             '1st Owner': 'Original owner of the vehicle',
             '2nd Owner': 'Second owner of the vehicle',
-            '3rd Owner': 'Third or subsequent owner'
+            '3rd Owner': 'Third or subsequent owner',
+            'Unknown': 'Ownership information not available'
         }
     }
     
     return df_processed, condition_colors, maintenance_categories
 
-def group_scaled_values(value, ranges, labels):
-    """
-    Helper function to group scaled values into meaningful categories
-    
-    Args:
-        value: The scaled value to categorize
-        ranges: List of range boundaries
-        labels: List of labels for each range
-        
-    Returns:
-        Appropriate label for the value
-    """
-    for i, r in enumerate(ranges[:-1]):
-        if value <= r:
-            return labels[i]
-    return labels[-1]
 
 def add_maintenance_insights(df):
     """
-    Calculate key maintenance insights from the data
-    
-    Args:
-        df: Processed DataFrame with maintenance metrics
-        
-    Returns:
-        Dictionary containing key insights
+    Calculate key maintenance insights from the data with error handling
     """
     insights = {
         'maintenance_quality': {
-            'good': (df['Maintenance_History_Code'] == 2).mean() * 100,
-            'average': (df['Maintenance_History_Code'] == 1).mean() * 100,
-            'poor': (df['Maintenance_History_Code'] == 0).mean() * 100
+            'good': (df['Maintenance_History_Code'] == 2).sum() / len(df) * 100,
+            'average': (df['Maintenance_History_Code'] == 1).sum() / len(df) * 100,
+            'poor': (df['Maintenance_History_Code'] == 0).sum() / len(df) * 100
         },
         'component_health': {
-            'tires_need_replacement': (df['Tire_Condition_Code'] == 0).mean() * 100,
-            'brakes_need_service': (df['Brake_Condition_Code'] == 0).mean() * 100,
-            'battery_weak': (df['Battery_Status_Code'] == 0).mean() * 100
+            'tires_need_replacement': (df['Tire_Condition_Code'] == 0).sum() / len(df) * 100,
+            'brakes_need_service': (df['Brake_Condition_Code'] == 0).sum() / len(df) * 100,
+            'battery_weak': (df['Battery_Status_Code'] == 0).sum() / len(df) * 100
         }
     }
     
