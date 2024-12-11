@@ -2715,10 +2715,151 @@ def show_eda():
             "Pattern Discovery"
         ])
         
+
+# Multivariate Analysis - Correlation Analysis
         with multi_tab1:
-            st.subheader("Correlation Analysis")
-            # Placeholder for correlation analysis
-            st.write("Correlation analysis coming soon")
+            st.header("Correlation Analysis")
+            
+            # Define feature groups
+            feature_groups = {
+                'Demographics': ['AGE', 'INCOME', 'EDUCATION', 'OCCUPATION', 'TRAVTIME', 'MSTATUS', 'GENDER'],
+                'Vehicle': ['CAR_AGE', 'max_power', 'max_torque', 'Mileage', 'displacement', 'Engine_Size'],
+                'Safety': ['airbags', 'ncap_rating', 'is_brake_assist', 'is_parking_sensors', 'is_tpms', 'is_esc'],
+                'Risk': ['MVR_PTS', 'CLM_FREQ', 'OLDCLAIM', 'Reported_Issues', 'Accident_History']
+            }
+            
+            # Target variables
+            target_vars = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
+            
+            # Feature Group Correlations
+            st.subheader("Feature Group Correlations")
+            
+            # Create tabs for different feature groups
+            group_tabs = st.tabs(list(feature_groups.keys()))
+            
+            for tab, (group_name, features) in zip(group_tabs, feature_groups.items()):
+                with tab:
+                    # Calculate correlation matrix for the group
+                    valid_features = [f for f in features if f in balanced_data_cleaned.columns]
+                    if valid_features:
+                        corr_matrix = balanced_data_cleaned[valid_features].corr()
+                        
+                        # Create heatmap
+                        fig = go.Figure(data=go.Heatmap(
+                            z=corr_matrix,
+                            x=valid_features,
+                            y=valid_features,
+                            colorscale='RdBu',
+                            zmin=-1,
+                            zmax=1,
+                            text=np.round(corr_matrix, 2),
+                            texttemplate='%{text}',
+                            textfont={"size": 10}
+                        ))
+                        
+                        fig.update_layout(
+                            title=f"{group_name} Features Correlation Heatmap",
+                            height=500
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+            
+            # Feature Importance Analysis
+            st.subheader("Feature Importance Analysis")
+            
+            # Calculate correlations with target variables
+            all_features = [item for sublist in feature_groups.values() for item in sublist]
+            valid_features = [f for f in all_features if f in balanced_data_cleaned.columns]
+            
+            target_correlations = {}
+            for target in target_vars:
+                correlations = []
+                for feature in valid_features:
+                    try:
+                        corr = balanced_data_cleaned[feature].corr(balanced_data_cleaned[target])
+                        correlations.append((feature, abs(corr)))
+                    except:
+                        continue
+                
+                # Sort by absolute correlation
+                correlations.sort(key=lambda x: x[1], reverse=True)
+                target_correlations[target] = correlations[:10]  # Top 10
+            
+            # Create visualization for top correlations
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Top correlations bar chart
+                for target, correlations in target_correlations.items():
+                    features, corr_values = zip(*correlations)
+                    
+                    fig = go.Figure(data=[
+                        go.Bar(
+                            x=corr_values,
+                            y=features,
+                            orientation='h',
+                            text=np.round(corr_values, 3),
+                            textposition='auto',
+                        )
+                    ])
+                    
+                    fig.update_layout(
+                        title=f"Top 10 Correlations with {target}",
+                        xaxis_title="Absolute Correlation",
+                        yaxis_title="Feature",
+                        height=400
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Identify multicollinearity
+                st.write("#### Multicollinearity Analysis")
+                
+                # Get highly correlated feature pairs
+                high_corr_pairs = []
+                corr_matrix = balanced_data_cleaned[valid_features].corr()
+                
+                for i in range(len(valid_features)):
+                    for j in range(i+1, len(valid_features)):
+                        corr_value = abs(corr_matrix.iloc[i, j])
+                        if corr_value > 0.7:  # Threshold for high correlation
+                            high_corr_pairs.append({
+                                'Feature 1': valid_features[i],
+                                'Feature 2': valid_features[j],
+                                'Correlation': corr_value
+                            })
+                
+                if high_corr_pairs:
+                    high_corr_df = pd.DataFrame(high_corr_pairs)
+                    high_corr_df = high_corr_df.sort_values('Correlation', ascending=False)
+                    
+                    st.write("Highly Correlated Feature Pairs (|correlation| > 0.7):")
+                    st.dataframe(high_corr_df.round(3))
+                else:
+                    st.write("No feature pairs with correlation > 0.7 found.")
+            
+            # Key Insights
+            st.subheader("Correlation Analysis Insights")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **Feature Group Patterns:**
+                - Key demographic correlations
+                - Vehicle feature relationships
+                - Safety feature interdependencies
+                - Risk indicator associations
+                """)
+            
+            with col2:
+                st.markdown("""
+                **Target Variable Relations:**
+                - Strongest predictive features
+                - Potential feature redundancies
+                - Group-specific importance
+                """)
             
         with multi_tab2:
             st.subheader("Dimensionality Reduction")
