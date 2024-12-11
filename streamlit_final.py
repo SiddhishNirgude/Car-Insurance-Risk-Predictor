@@ -839,6 +839,7 @@ def plot_pie_chart(class_distribution):
 
 
 # Placeholder functions for additional pages
+# Placeholder functions for additional pages
 def show_eda():
     st.title("Exploratory Data Analysis")
     
@@ -893,17 +894,17 @@ def show_eda():
                 if plot_type == "Histogram":
                     # Add histogram with KDE
                     fig.add_trace(go.Histogram(
-                        x=merged_dataset[selected_numeric],
+                        x=balanced_data[selected_numeric],
                         name="Distribution",
                         nbinsx=st.slider("Number of Bins", 10, 100, 50),
                         histnorm='probability density'
                     ))
                     
                     # Add KDE
-                    kde = gaussian_kde(merged_dataset[selected_numeric].dropna())
+                    kde = gaussian_kde(balanced_data[selected_numeric].dropna())
                     x_range = np.linspace(
-                        merged_dataset[selected_numeric].min(),
-                        merged_dataset[selected_numeric].max(),
+                        balanced_data[selected_numeric].min(),
+                        balanced_data[selected_numeric].max(),
                         100
                     )
                     fig.add_trace(go.Scatter(
@@ -915,14 +916,14 @@ def show_eda():
                 
                 elif plot_type == "Box Plot":
                     fig.add_trace(go.Box(
-                        y=merged_dataset[selected_numeric],
+                        y=balanced_data[selected_numeric],
                         name=selected_numeric,
                         boxpoints='outliers'
                     ))
                 
                 else:  # Violin Plot
                     fig.add_trace(go.Violin(
-                        y=merged_dataset[selected_numeric],
+                        y=balanced_data[selected_numeric],
                         name=selected_numeric,
                         box_visible=True,
                         meanline_visible=True
@@ -941,7 +942,7 @@ def show_eda():
                 
                 # Display summary statistics
                 st.write("#### Summary Statistics")
-                summary_stats = merged_dataset[selected_numeric].describe()
+                summary_stats = balanced_data[selected_numeric].describe()
                 st.dataframe(summary_stats)
             
             with col2:
@@ -960,7 +961,7 @@ def show_eda():
                 )
                 
                 # Calculate value counts
-                value_counts = merged_dataset[selected_categorical].value_counts()
+                value_counts = balanced_data[selected_categorical].value_counts()
                 
                 # Create figure based on selection
                 if cat_plot_type == "Bar Plot":
@@ -995,7 +996,7 @@ def show_eda():
                 st.write("#### Frequency Table")
                 freq_df = pd.DataFrame({
                     'Count': value_counts,
-                    'Percentage': (value_counts / len(merged_dataset) * 100).round(2)
+                    'Percentage': (value_counts / len(balanced_data) * 100).round(2)
                 })
                 st.dataframe(freq_df)
         
