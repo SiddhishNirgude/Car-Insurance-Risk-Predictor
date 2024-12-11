@@ -2386,10 +2386,171 @@ def show_eda():
                 - Component deterioration patterns
                 """)
             
+# Insurance Claims Analysis Tab (is_claim)
         with bi_tab3:
-            st.subheader("Claim Status Analysis")
-            # Placeholder for claim status analysis
-            st.write("Claim status analysis coming soon")
+            st.subheader("Insurance Claims Analysis")
+            
+            # Risk Factors Analysis
+            st.write("#### Risk Factor Analysis")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # MVR_PTS vs Claims
+                fig_mvr = go.Figure()
+                
+                for claim in [0, 1]:
+                    mvr_data = balanced_data_cleaned[balanced_data_cleaned['is_claim'] == claim]['MVR_PTS']
+                    fig_mvr.add_trace(go.Box(
+                        y=mvr_data,
+                        name=f"{'Claim' if claim == 1 else 'No Claim'}",
+                        boxpoints='outliers'
+                    ))
+                
+                fig_mvr.update_layout(
+                    title="Motor Vehicle Record Points Distribution by Claim Status",
+                    yaxis_title="MVR Points",
+                    height=400
+                )
+                st.plotly_chart(fig_mvr, use_container_width=True)
+                
+                # Previous Claims vs New Claims (OLDCLAIM)
+                fig_prev = go.Figure()
+                
+                for claim in [0, 1]:
+                    prev_claim_data = balanced_data_cleaned[balanced_data_cleaned['is_claim'] == claim]['OLDCLAIM']
+                    fig_prev.add_trace(go.Violin(
+                        y=prev_claim_data,
+                        name=f"{'Current Claim' if claim == 1 else 'No Current Claim'}",
+                        box_visible=True
+                    ))
+                
+                fig_prev.update_layout(
+                    title="Previous Claim Amount by Current Claim Status",
+                    yaxis_title="Previous Claim Amount",
+                    height=400
+                )
+                st.plotly_chart(fig_prev, use_container_width=True)
+            
+            with col2:
+                # Urbanicity vs Claims
+                urban_claims = pd.crosstab(
+                    balanced_data_cleaned['URBANICITY'],
+                    balanced_data_cleaned['is_claim'],
+                    normalize='index'
+                ) * 100
+                
+                fig_urban = go.Figure(data=[
+                    go.Bar(
+                        x=['Rural', 'Urban'],
+                        y=urban_claims[1],
+                        name='Claim Rate',
+                        marker_color='#e74c3c'
+                    )
+                ])
+                
+                fig_urban.update_layout(
+                    title="Claim Rate by Urbanicity",
+                    xaxis_title="Area Type",
+                    yaxis_title="Claim Rate (%)",
+                    height=400
+                )
+                st.plotly_chart(fig_urban, use_container_width=True)
+            
+            # Safety Analysis
+            st.write("#### Safety Analysis")
+            
+            # NCAP Rating vs Claims
+            fig_ncap = go.Figure()
+            
+            ncap_claims = pd.crosstab(
+                balanced_data_cleaned['ncap_rating'],
+                balanced_data_cleaned['is_claim'],
+                normalize='index'
+            ) * 100
+            
+            fig_ncap.add_trace(go.Bar(
+                x=ncap_claims.index,
+                y=ncap_claims[1],
+                name='Claim Rate',
+                marker_color='#3498db'
+            ))
+            
+            fig_ncap.update_layout(
+                title="Claim Rate by NCAP Rating",
+                xaxis_title="NCAP Rating",
+                yaxis_title="Claim Rate (%)",
+                height=400
+            )
+            
+            st.plotly_chart(fig_ncap, use_container_width=True)
+            
+            # Safety Features Analysis
+            safety_features = [
+                'airbags', 'is_esc', 'is_adjustable_steering',
+                'is_tpms', 'is_parking_sensors', 'is_parking_camera'
+            ]
+            
+            # Calculate claim rates for each safety feature
+            safety_data = []
+            
+            for feature in safety_features:
+                feature_claims = pd.crosstab(
+                    balanced_data_cleaned[feature],
+                    balanced_data_cleaned['is_claim'],
+                    normalize='index'
+                ) * 100
+                
+                if 1 in feature_claims.columns:
+                    safety_data.append({
+                        'Feature': feature.replace('is_', '').replace('_', ' ').title(),
+                        'Without_Feature': feature_claims.loc[0, 1] if 0 in feature_claims.index else 0,
+                        'With_Feature': feature_claims.loc[1, 1] if 1 in feature_claims.index else 0
+                    })
+            
+            safety_df = pd.DataFrame(safety_data)
+            
+            # Create heatmap for safety features
+            fig_safety = go.Figure(data=go.Heatmap(
+                z=np.array([safety_df['Without_Feature'], safety_df['With_Feature']]).T,
+                x=['Without Feature', 'With Feature'],
+                y=safety_df['Feature'],
+                colorscale='RdYlBu_r',
+                text=np.array([safety_df['Without_Feature'], safety_df['With_Feature']]).T,
+                texttemplate='%{text:.1f}%',
+                textfont={"size": 12},
+                colorbar=dict(title='Claim Rate (%)')
+            ))
+            
+            fig_safety.update_layout(
+                title="Claim Rates by Safety Feature",
+                xaxis_title="Feature Status",
+                yaxis_title="Safety Feature",
+                height=500
+            )
+            
+            st.plotly_chart(fig_safety, use_container_width=True)
+            
+            # Key Insights
+            st.write("#### Key Risk and Safety Insights")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **Risk Factor Patterns:**
+                - Relationship between MVR points and claim likelihood
+                - Impact of previous claims on new claim probability
+                - Urban vs rural claim rate differences
+                """)
+            
+            with col2:
+                st.markdown("""
+                **Safety Impact:**
+                - NCAP rating influence on claim rates
+                - Effectiveness of different safety features
+                - Combined safety feature implications
+                """
 
     # Multivariate Analysis Tab
     with tab3:
