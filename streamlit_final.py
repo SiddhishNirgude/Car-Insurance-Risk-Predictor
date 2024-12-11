@@ -2955,8 +2955,143 @@ def show_eda():
 
 
 def show_correlation_analysis():
-    st.title("Correlation Analysis")
-    st.write("Correlation analysis content coming soon!")
+
+    st.title("Comprehensive Correlation Analysis")
+    
+    # Combine all features from different groups
+    all_features = [
+        # Demographics
+        'AGE', 'INCOME', 'HOME_VAL', 'YOJ', 'TRAVTIME', 'KIDSDRIV', 'HOMEKIDS',
+        'PARENT1', 'MSTATUS', 'GENDER',
+        
+        # Vehicle Specifications
+        'CAR_AGE', 'max_power', 'max_torque', 'displacement', 'Engine_Size',
+        'turning_radius', 'length', 'width', 'height', 'gross_weight',
+        'Mileage', 'Fuel_Efficiency', 'cylinder', 'gear_box',
+        
+        # Safety Features
+        'airbags', 'ncap_rating', 'is_brake_assist', 'is_parking_sensors',
+        'is_tpms', 'is_esc', 'is_parking_camera', 'is_front_fog_lights',
+        'is_speed_alert', 'is_central_locking', 'is_power_steering',
+        'is_day_night_rear_view_mirror', 'is_ecw',
+        
+        # Risk and Claims
+        'MVR_PTS', 'CLM_FREQ', 'OLDCLAIM', 'CLM_AMT', 'TIF',
+        'Reported_Issues', 'Accident_History', 'Insurance_Premium',
+        
+        # Maintenance Indicators
+        'Vehicle_Age', 'Odometer_Reading', 'Service_History',
+        'Maintenance_History_Code', 'Tire_Condition_Code',
+        'Brake_Condition_Code', 'Battery_Status_Code',
+        
+        # Vehicle Type Indicators
+        'CAR_TYPE_Panel Truck', 'CAR_TYPE_Pickup', 'CAR_TYPE_SUV',
+        'CAR_TYPE_Sports Car', 'CAR_TYPE_Van', 'segment_B1', 'segment_B2',
+        'segment_C1', 'segment_C2', 'segment_Utility', 'fuel_type_Diesel',
+        'fuel_type_Petrol', 'transmission_type_Manual'
+    ]
+    
+    # Target variables
+    target_vars = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
+    
+    # Filter valid features
+    valid_features = [f for f in all_features if f in balanced_data.columns]
+    
+    # Calculate correlation matrix
+    try:
+        corr_matrix = balanced_data[valid_features + target_vars].corr()
+        
+        # Create tabs for different views
+        tab1, tab2, tab3 = st.tabs(["Correlation Heatmap", "Top Correlations", "Correlation Table"])
+        
+        with tab1:
+            st.subheader("Complete Correlation Heatmap")
+            
+            # Create heatmap
+            fig = go.Figure(data=go.Heatmap(
+                z=corr_matrix,
+                x=corr_matrix.columns,
+                y=corr_matrix.columns,
+                colorscale='RdBu',
+                zmin=-1,
+                zmax=1,
+                text=np.round(corr_matrix, 2),
+                texttemplate='%{text}',
+                textfont={"size": 8}
+            ))
+            
+            fig.update_layout(
+                title="Complete Correlation Matrix Heatmap",
+                height=900,
+                width=900,
+                xaxis={'tickangle': 45},
+                yaxis={'tickangle': 0}
+            )
+            
+            st.plotly_chart(fig)
+            
+        with tab2:
+            st.subheader("Top 30 Feature Correlations")
+            
+            # Get upper triangle of correlation matrix
+            upper_tri = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+            
+            # Stack the correlations and sort
+            stacked_corr = upper_tri.stack().reset_index()
+            stacked_corr.columns = ['Feature 1', 'Feature 2', 'Correlation']
+            stacked_corr['Abs_Correlation'] = abs(stacked_corr['Correlation'])
+            
+            # Sort and get top 30
+            top_30_corr = stacked_corr.sort_values('Abs_Correlation', ascending=False).head(30)
+            
+            # Create bar chart
+            fig = go.Figure(data=[
+                go.Bar(
+                    x=range(len(top_30_corr)),
+                    y=top_30_corr['Correlation'],
+                    text=top_30_corr.apply(lambda x: f"{x['Feature 1']} vs {x['Feature 2']}<br>{x['Correlation']:.3f}", axis=1),
+                    textposition='auto',
+                )
+            ])
+            
+            fig.update_layout(
+                title="Top 30 Feature Correlations",
+                xaxis_title="Correlation Pair Index",
+                yaxis_title="Correlation Value",
+                height=600,
+                showlegend=False
+            )
+            
+            st.plotly_chart(fig)
+            
+            # Display as table
+            st.write("Top 30 Correlations Table:")
+            st.dataframe(top_30_corr.round(3))
+        
+        with tab3:
+            st.subheader("Complete Correlation Table")
+            
+            # Add search functionality
+            search_term = st.text_input("Search for features:")
+            
+            if search_term:
+                # Filter correlation matrix based on search
+                filtered_cols = [col for col in corr_matrix.columns if search_term.lower() in col.lower()]
+                filtered_matrix = corr_matrix[filtered_cols].loc[filtered_cols]
+                st.dataframe(filtered_matrix.round(3))
+            else:
+                st.dataframe(corr_matrix.round(3))
+            
+    except Exception as e:
+        st.error(f"Error in correlation analysis: {str(e)}")
+        
+    # Add download button for correlation matrix
+    st.download_button(
+        label="Download Correlation Matrix as CSV",
+        data=corr_matrix.round(3).to_csv().encode('utf-8'),
+        file_name='correlation_matrix.csv',
+        mime='text/csv'
+    )
 
 def show_category_analysis():
     st.title("Category Analysis")
