@@ -2244,11 +2244,147 @@ def show_eda():
                    - Effectiveness of different safety features
                    - Correlation between safety features and claim rates
                 """)
-            
+
+# Maintenance Analysis Tab (Need_Maintenance)
         with bi_tab2:
             st.subheader("Maintenance Analysis")
-            # Placeholder for maintenance analysis
-            st.write("Maintenance analysis coming soon")
+            
+            # Vehicle Health Analysis
+            st.write("#### Vehicle Health Relationships")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Mileage vs Maintenance
+                fig_mileage = go.Figure()
+                
+                for maint in [0, 1]:
+                    mileage_data = balanced_data_cleaned[balanced_data_cleaned['Need_Maintenance'] == maint]['Odometer_Reading']
+                    fig_mileage.add_trace(go.Box(
+                        y=mileage_data,
+                        name=f"{'Needs Maintenance' if maint == 1 else 'No Maintenance Needed'}",
+                        boxpoints='outliers'
+                    ))
+                
+                fig_mileage.update_layout(
+                    title="Mileage Distribution by Maintenance Need",
+                    yaxis_title="Odometer Reading",
+                    height=400
+                )
+                st.plotly_chart(fig_mileage, use_container_width=True)
+                
+                # Service History vs Maintenance
+                fig_service = go.Figure()
+                
+                for maint in [0, 1]:
+                    service_data = balanced_data_cleaned[balanced_data_cleaned['Need_Maintenance'] == maint]['Service_History']
+                    fig_service.add_trace(go.Violin(
+                        y=service_data,
+                        name=f"{'Needs Maintenance' if maint == 1 else 'No Maintenance Needed'}",
+                        box_visible=True
+                    ))
+                
+                fig_service.update_layout(
+                    title="Service History by Maintenance Need",
+                    yaxis_title="Service History Score",
+                    height=400
+                )
+                st.plotly_chart(fig_service, use_container_width=True)
+            
+            with col2:
+                # Vehicle Age vs Maintenance
+                fig_age = go.Figure()
+                
+                age_maint = pd.crosstab(
+                    pd.qcut(balanced_data_cleaned['Vehicle_Age'], q=5),
+                    balanced_data_cleaned['Need_Maintenance'],
+                    normalize='index'
+                ) * 100
+                
+                fig_age.add_trace(go.Bar(
+                    x=age_maint.index.astype(str),
+                    y=age_maint[1],
+                    name='Needs Maintenance',
+                    marker_color='#e74c3c'
+                ))
+                
+                fig_age.update_layout(
+                    title="Maintenance Need by Vehicle Age Quintiles",
+                    xaxis_title="Vehicle Age Groups",
+                    yaxis_title="Percentage Needing Maintenance",
+                    height=400
+                )
+                st.plotly_chart(fig_age, use_container_width=True)
+            
+            # Component Status Analysis
+            st.write("#### Component Status Analysis")
+            
+            # Prepare component status data
+            components = {
+                'Battery_Status_Code': 'Battery Status',
+                'Tire_Condition_Code': 'Tire Condition',
+                'Brake_Condition_Code': 'Brake Condition'
+            }
+            
+            # Create a combined heatmap for all components
+            component_data = []
+            
+            for code, name in components.items():
+                cross_tab = pd.crosstab(
+                    balanced_data_cleaned[code],
+                    balanced_data_cleaned['Need_Maintenance'],
+                    normalize='index'
+                ) * 100
+                
+                for condition in cross_tab.index:
+                    component_data.append({
+                        'Component': name,
+                        'Condition': condition,
+                        'Maintenance_Rate': cross_tab.loc[condition, 1]
+                    })
+            
+            component_df = pd.DataFrame(component_data)
+            
+            fig_components = go.Figure(data=go.Heatmap(
+                z=component_df['Maintenance_Rate'].values.reshape(3, 3),
+                x=['Poor', 'Fair', 'Good'],
+                y=list(components.values()),
+                colorscale='RdYlBu_r',
+                text=np.round(component_df['Maintenance_Rate'].values.reshape(3, 3), 1),
+                texttemplate='%{text}%',
+                textfont={"size": 12},
+                colorbar=dict(title='Maintenance Need (%)')
+            ))
+            
+            fig_components.update_layout(
+                title="Maintenance Need by Component Condition",
+                xaxis_title="Component Condition",
+                yaxis_title="Component Type",
+                height=400
+            )
+            
+            st.plotly_chart(fig_components, use_container_width=True)
+            
+            # Key Insights
+            st.write("#### Key Maintenance Insights")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **Vehicle Health Patterns:**
+                - Relationship between mileage and maintenance needs
+                - Impact of service history on maintenance requirements
+                - Age-related maintenance patterns
+                """)
+            
+            with col2:
+                st.markdown("""
+                **Component Status Impact:**
+                - Critical component condition relationships
+                - Maintenance need variations by component state
+                - Component deterioration patterns
+                """)
             
         with bi_tab3:
             st.subheader("Claim Status Analysis")
