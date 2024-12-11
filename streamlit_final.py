@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from scipy.stats import gaussian_kde
 from sklearn.impute import KNNImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 # Page configuration
 st.set_page_config(
