@@ -832,15 +832,56 @@ def plot_pie_chart(class_distribution):
     return fig
         
 
+# Add this function at the start of your show_eda function
+def clean_categorical_columns(df):
+    """
+    Clean specific categorical columns by rounding and converting to int
+    """
+    df_cleaned = df.copy()
+    
+    # Clean EDUCATION
+    df_cleaned['EDUCATION'] = df_cleaned['EDUCATION'].round().astype(int)
+    # Map education codes to labels
+    education_map = {
+        0: 'High School',
+        1: 'Bachelors',
+        2: 'Masters',
+        3: 'PhD',
+        4: 'Other'
+    }
+    df_cleaned['EDUCATION'] = df_cleaned['EDUCATION'].map(education_map)
 
-        
+    # Clean OCCUPATION
+    df_cleaned['OCCUPATION'] = df_cleaned['OCCUPATION'].round().astype(int)
+    # Map occupation codes to labels
+    occupation_map = {
+        0: 'Blue Collar',
+        1: 'Clerical',
+        2: 'Professional',
+        3: 'Manager',
+        4: 'Home Maker',
+        5: 'Student',
+        6: 'Other'
+    }
+    df_cleaned['OCCUPATION'] = df_cleaned['OCCUPATION'].map(occupation_map)
 
+    # Clean Battery_Status_Code
+    df_cleaned['Battery_Status_Code'] = df_cleaned['Battery_Status_Code'].round().astype(int)
+    # Map battery status codes
+    battery_map = {
+        0: 'Good',
+        1: 'Fair',
+        2: 'Poor'
+    }
+    df_cleaned['Battery_Status_Code'] = df_cleaned['Battery_Status_Code'].map(battery_map)
 
+    return df_cleaned
 
-
-# Placeholder functions for additional pages
 # Placeholder functions for additional pages
 def show_eda():
+    # Clean the dataset first
+    balanced_data_cleaned = clean_categorical_columns(balanced_data)
+
     st.title("Exploratory Data Analysis")
     
     # Create main tabs for different analysis types
@@ -894,17 +935,17 @@ def show_eda():
                 if plot_type == "Histogram":
                     # Add histogram with KDE
                     fig.add_trace(go.Histogram(
-                        x=balanced_data[selected_numeric],
+                        x=balanced_data_cleaned[selected_numeric],
                         name="Distribution",
                         nbinsx=st.slider("Number of Bins", 10, 100, 50),
                         histnorm='probability density'
                     ))
                     
                     # Add KDE
-                    kde = gaussian_kde(balanced_data[selected_numeric].dropna())
+                    kde = gaussian_kde(balanced_data_cleaned[selected_numeric].dropna())
                     x_range = np.linspace(
-                        balanced_data[selected_numeric].min(),
-                        balanced_data[selected_numeric].max(),
+                        balanced_data_cleaned[selected_numeric].min(),
+                        balanced_data_cleaned[selected_numeric].max(),
                         100
                     )
                     fig.add_trace(go.Scatter(
@@ -916,14 +957,14 @@ def show_eda():
                 
                 elif plot_type == "Box Plot":
                     fig.add_trace(go.Box(
-                        y=balanced_data[selected_numeric],
+                        y=balanced_data_cleaned[selected_numeric],
                         name=selected_numeric,
                         boxpoints='outliers'
                     ))
                 
                 else:  # Violin Plot
                     fig.add_trace(go.Violin(
-                        y=balanced_data[selected_numeric],
+                        y=balanced_data_cleaned[selected_numeric],
                         name=selected_numeric,
                         box_visible=True,
                         meanline_visible=True
@@ -942,7 +983,7 @@ def show_eda():
                 
                 # Display summary statistics
                 st.write("#### Summary Statistics")
-                summary_stats = balanced_data[selected_numeric].describe()
+                summary_stats = balanced_data_cleaned[selected_numeric].describe()
                 st.dataframe(summary_stats)
             
             with col2:
@@ -961,7 +1002,7 @@ def show_eda():
                 )
                 
                 # Calculate value counts
-                value_counts = balanced_data[selected_categorical].value_counts()
+                value_counts = balanced_data_cleaned[selected_categorical].value_counts()
                 
                 # Create figure based on selection
                 if cat_plot_type == "Bar Plot":
@@ -996,7 +1037,7 @@ def show_eda():
                 st.write("#### Frequency Table")
                 freq_df = pd.DataFrame({
                     'Count': value_counts,
-                    'Percentage': (value_counts / len(balanced_data) * 100).round(2)
+                    'Percentage': (value_counts / len(balanced_data_cleaned) * 100).round(2)
                 })
                 st.dataframe(freq_df)
         
