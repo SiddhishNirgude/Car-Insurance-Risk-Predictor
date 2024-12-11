@@ -885,7 +885,7 @@ def show_eda():
     st.title("Exploratory Data Analysis")
     
     # Create main tabs for different analysis types
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3 = st.tabs([
         "Univariate Analysis", 
         "Bivariate Analysis",
         "Multivariate Analysis"
