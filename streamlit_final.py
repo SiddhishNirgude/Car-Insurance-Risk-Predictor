@@ -716,27 +716,31 @@ def show_data_merging():
         1. **Check Class Imbalance**:
             - We analyzed the class distribution of target variables before SMOTE balancing
             - Initial analysis showed significant imbalance in CLAIM_FLAG (73.3% vs 26.7%)
-            - Similar imbalances were found in Need_Maintenance and is_claim variables
+            - Severe imbalance in Need_Maintenance (80.4% vs 19.6%)
+            - Extreme imbalance in is_claim (94.1% vs 5.9%)
             
         2. **Initial SMOTE Balancing Attempt**:
             - Applied SMOTE to all target variables simultaneously
-            - This resulted in a significantly large dataset due to multiplicative effect
-            - Dataset size increased beyond practical usage limits
+            - Carefully considered the balancing ratio for each variable
+            - Aimed for optimal balance while preserving data quality
             
         3. **Optimized SMOTE Application**:
-            - Revised approach to balance classes more conservatively
-            - Implemented selective SMOTE with controlled ratios
-            - Target ratio was adjusted to maintain reasonable dataset size while improving class balance
+            - Implemented variable-specific balancing strategies
+            - CLAIM_FLAG: Applied complete balancing (50-50 split)
+            - Need_Maintenance: Near-balanced distribution (53.1% vs 46.9%)
+            - is_claim: Moderate balancing (62.3% vs 37.7%)
             
         4. **Final Dataset Optimization**:
-            - Achieved more balanced class distribution (71.1% vs 28.9%)
-            - Maintained manageable dataset size for model training
-            - Preserved data quality while reducing computational overhead
+            - Each target variable achieved its optimal balance ratio
+            - CLAIM_FLAG achieved perfect balance for maximum learning effectiveness
+            - Need_Maintenance and is_claim maintained controlled imbalance to prevent overfitting
+            - Preserved data quality while improving minority class representation
             
         **Impact on Model Training**:
-            - The optimized balance improves model's ability to learn from minority classes
-            - Reduced risk of overfitting compared to extreme oversampling
-            - Better generalization potential for real-world predictions
+            - Differentiated balancing strategies improve model robustness
+            - Perfect balance in CLAIM_FLAG ensures unbiased prediction of insurance claims
+            - Near-balance in maintenance prediction enables better preventive insights
+            - Controlled balance in is_claim reduces bias while preventing synthetic data dominance
         """)
 
 
@@ -784,24 +788,24 @@ def show_data_merging():
                     st.markdown("""
                     **Observations for Insurance Claims:**
                     - Initial distribution showed significant imbalance (73.3% vs 26.7%)
-                    - After SMOTE, achieved better balance (71.1% vs 28.9%)
-                    - Moderate balancing chosen to maintain data quality while improving minority class representation
+                    - After SMOTE: Achieved perfect balance (50.0% vs 50.0%)
+                    - Complete balancing applied to maximize learning from both classes
                     """)
                 
                 elif col == 'Need_Maintenance':
                     st.markdown("""
                     **Observations for Maintenance Needs:**
-                    - Severe initial imbalance (80.4% no maintenance vs 19.6% needs maintenance)
-                    - Post-SMOTE distribution improved to 67.2% vs 32.8%
-                    - Controlled balancing to prevent excessive synthetic data generation
+                    - Severe initial imbalance (80.4% vs 19.6% needs maintenance)
+                    - Post-SMOTE distribution improved to 53.1% vs 46.9%
+                    - Near-balanced distribution achieved while maintaining data integrity
                     """)
                 
                 elif col == 'is_claim':
                     st.markdown("""
                     **Observations for Claim Status:**
                     - Highly skewed initial distribution (94.1% vs 5.9%)
-                    - After SMOTE: Improved to 78.4% vs 21.6%
-                    - Conservative balancing applied due to extreme initial imbalance
+                    - After SMOTE: Improved to 62.3% vs 37.7%
+                    - Moderate balancing applied to reduce extreme imbalance while preventing overfitting
                     """)
                 
                 # Display counts table before and after SMOTE
