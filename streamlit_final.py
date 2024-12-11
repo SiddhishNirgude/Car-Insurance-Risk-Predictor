@@ -877,6 +877,85 @@ def clean_categorical_columns(df):
 
     return df_cleaned
 
+def process_risk_indicators(df):
+    """
+    Process risk indicator columns to map encoded values back to meaningful categories.
+    
+    Args:
+        df: DataFrame containing the risk indicator columns
+    
+    Returns:
+        DataFrame with processed risk indicators
+    """
+    df_processed = df.copy()
+    
+    # 1. REVOKED mapping (0/1 to No/Yes)
+    df_processed['REVOKED_CAT'] = df_processed['REVOKED'].map({
+        0: 'Not Revoked',
+        1: 'Revoked'
+    })
+    
+    # 2. CAR_USE mapping (0/1 to Private/Commercial)
+    df_processed['CAR_USE_CAT'] = df_processed['CAR_USE'].map({
+        0: 'Private',
+        1: 'Commercial'
+    })
+    
+    # 3. URBANICITY mapping (0/1 to Low/High)
+    df_processed['URBANICITY_CAT'] = df_processed['URBANICITY'].map({
+        0: 'Low Urbanicity',
+        1: 'High Urbanicity'
+    })
+    
+    # 4. Accident_History mapping (float ranges to severity categories)
+    def map_accident_history(value):
+        if value <= 1:
+            return 'No Accidents'
+        elif value <= 2:
+            return 'Minor Accidents'
+        elif value <= 3:
+            return 'Moderate Accidents'
+        else:
+            return 'Severe Accidents'
+            
+    df_processed['ACCIDENT_HISTORY_CAT'] = df_processed['Accident_History'].apply(map_accident_history)
+    
+    # Create a color mapping dictionary for accident history categories
+    accident_colors = {
+        'No Accidents': 'green',
+        'Minor Accidents': 'yellow',
+        'Moderate Accidents': 'orange',
+        'Severe Accidents': 'red'
+    }
+    
+    return df_processed, accident_colors
+
+
+def get_risk_category_descriptions():
+    """
+    Returns descriptions for each risk category for documentation purposes.
+    """
+    return {
+        'REVOKED': {
+            'Not Revoked': 'Driver license has never been revoked',
+            'Revoked': 'Driver license has been revoked in the past'
+        },
+        'CAR_USE': {
+            'Private': 'Vehicle used for personal/family purposes',
+            'Commercial': 'Vehicle used for business/commercial purposes'
+        },
+        'URBANICITY': {
+            'Low Urbanicity': 'Rural or less densely populated area',
+            'High Urbanicity': 'Urban or densely populated area'
+        },
+        'ACCIDENT_HISTORY': {
+            'No Accidents': 'No significant accident history (Score ≤ 1)',
+            'Minor Accidents': 'Minor accidents or incidents (1 < Score ≤ 2)',
+            'Moderate Accidents': 'Moderate accident history (2 < Score ≤ 3)',
+            'Severe Accidents': 'Severe or frequent accidents (Score > 3)'
+        }
+    }
+
 # Placeholder functions for additional pages
 def show_eda():
     # Clean the dataset first
@@ -1233,84 +1312,7 @@ def show_eda():
             - Fuel Type Distribution indicates the prevalence of different fuel technologies
             """)
 
-def process_risk_indicators(df):
-    """
-    Process risk indicator columns to map encoded values back to meaningful categories.
-    
-    Args:
-        df: DataFrame containing the risk indicator columns
-    
-    Returns:
-        DataFrame with processed risk indicators
-    """
-    df_processed = df.copy()
-    
-    # 1. REVOKED mapping (0/1 to No/Yes)
-    df_processed['REVOKED_CAT'] = df_processed['REVOKED'].map({
-        0: 'Not Revoked',
-        1: 'Revoked'
-    })
-    
-    # 2. CAR_USE mapping (0/1 to Private/Commercial)
-    df_processed['CAR_USE_CAT'] = df_processed['CAR_USE'].map({
-        0: 'Private',
-        1: 'Commercial'
-    })
-    
-    # 3. URBANICITY mapping (0/1 to Low/High)
-    df_processed['URBANICITY_CAT'] = df_processed['URBANICITY'].map({
-        0: 'Low Urbanicity',
-        1: 'High Urbanicity'
-    })
-    
-    # 4. Accident_History mapping (float ranges to severity categories)
-    def map_accident_history(value):
-        if value <= 1:
-            return 'No Accidents'
-        elif value <= 2:
-            return 'Minor Accidents'
-        elif value <= 3:
-            return 'Moderate Accidents'
-        else:
-            return 'Severe Accidents'
-            
-    df_processed['ACCIDENT_HISTORY_CAT'] = df_processed['Accident_History'].apply(map_accident_history)
-    
-    # Create a color mapping dictionary for accident history categories
-    accident_colors = {
-        'No Accidents': 'green',
-        'Minor Accidents': 'yellow',
-        'Moderate Accidents': 'orange',
-        'Severe Accidents': 'red'
-    }
-    
-    return df_processed, accident_colors
 
-
-def get_risk_category_descriptions():
-    """
-    Returns descriptions for each risk category for documentation purposes.
-    """
-    return {
-        'REVOKED': {
-            'Not Revoked': 'Driver license has never been revoked',
-            'Revoked': 'Driver license has been revoked in the past'
-        },
-        'CAR_USE': {
-            'Private': 'Vehicle used for personal/family purposes',
-            'Commercial': 'Vehicle used for business/commercial purposes'
-        },
-        'URBANICITY': {
-            'Low Urbanicity': 'Rural or less densely populated area',
-            'High Urbanicity': 'Urban or densely populated area'
-        },
-        'ACCIDENT_HISTORY': {
-            'No Accidents': 'No significant accident history (Score ≤ 1)',
-            'Minor Accidents': 'Minor accidents or incidents (1 < Score ≤ 2)',
-            'Moderate Accidents': 'Moderate accident history (2 < Score ≤ 3)',
-            'Severe Accidents': 'Severe or frequent accidents (Score > 3)'
-        }
-    }
 
 
         with uni_tab3:
