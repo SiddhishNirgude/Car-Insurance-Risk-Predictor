@@ -742,37 +742,73 @@ def show_data_merging():
 
         # List of columns to balance
         columns_to_balance = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
-
+        
         for col in columns_to_balance:
-            # Analyzing class imbalance before SMOTE (in the original dataset)
+            st.subheader(f"Class Distribution Analysis for {col}")
+            
+            # Create two columns for side-by-side visualization
+            col1, col2 = st.columns(2)
+            
+            # Analyzing class imbalance
             class_distribution_before = merged_dataset_no_duplicates[col].value_counts()
-            st.subheader(f"Class Distribution Before SMOTE Balancing for {col}")
-            # Pie chart for before SMOTE
-            st.subheader(f"Class Distribution Before SMOTE for {col}")
-            st.pyplot(plot_pie_chart(class_distribution_before))
-
-            # Pie chart for after SMOTE (from balanced dataset)
             class_distribution_after = balanced_data[col].value_counts()
-            st.subheader(f"Class Distribution After SMOTE for {col}")
-            st.pyplot(plot_pie_chart(class_distribution_after))
-
+            
+            # Plot in first column
+            with col1:
+                st.write("Before SMOTE")
+                fig_before = plot_pie_chart(class_distribution_before)
+                plt.figure(figsize=(6, 4))  # Reduce figure size
+                st.pyplot(fig_before)
+                
+            # Plot in second column
+            with col2:
+                st.write("After SMOTE")
+                fig_after = plot_pie_chart(class_distribution_after)
+                plt.figure(figsize=(6, 4))  # Reduce figure size
+                st.pyplot(fig_after)
+            
+            # Add remarks based on the variable
+            if col == 'CLAIM_FLAG':
+                st.markdown("""
+                **Observations for Insurance Claims:**
+                - Initial distribution showed significant imbalance (73.3% vs 26.7%)
+                - After SMOTE, achieved better balance (71.1% vs 28.9%)
+                - Moderate balancing chosen to maintain data quality while improving minority class representation
+                """)
+            
+            elif col == 'Need_Maintenance':
+                st.markdown("""
+                **Observations for Maintenance Needs:**
+                - Severe initial imbalance (80.4% no maintenance vs 19.6% needs maintenance)
+                - Post-SMOTE distribution improved to 67.2% vs 32.8%
+                - Controlled balancing to prevent excessive synthetic data generation
+                """)
+            
+            elif col == 'is_claim':
+                st.markdown("""
+                **Observations for Claim Status:**
+                - Highly skewed initial distribution (94.1% vs 5.9%)
+                - After SMOTE: Improved to 78.4% vs 21.6%
+                - Conservative balancing applied due to extreme initial imbalance
+                """)
+            
             # Display counts table before and after SMOTE
-            st.subheader(f"Class Distribution Counts for {col}")
+            st.subheader(f"Distribution Counts for {col}")
             before_after_counts = pd.DataFrame({
                 'Before SMOTE': class_distribution_before,
                 'After SMOTE': class_distribution_after
             }).fillna(0).astype(int)
             st.dataframe(before_after_counts)
+            
+            st.markdown("---")  # Add separator between variables
 
-        # Display balanced dataset (sample)
-        st.subheader("Balanced Dataset After SMOTE")
-        st.dataframe(balanced_data.head())
-
-# Function to plot pie chart
+# Modified pie chart function with smaller size
 def plot_pie_chart(class_distribution):
-    fig, ax = plt.subplots()
-    ax.pie(class_distribution, labels=class_distribution.index, autopct='%1.1f%%', startangle=90)
-    ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+    fig, ax = plt.subplots(figsize=(5, 5))  # Reduced figure size
+    ax.pie(class_distribution, labels=class_distribution.index, 
+           autopct='%1.1f%%', startangle=90,
+           colors=['#2E86C1', '#F39C12'])  # Consistent colors
+    ax.axis('equal')
     return fig
         
 
