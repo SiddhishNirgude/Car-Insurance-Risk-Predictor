@@ -861,24 +861,154 @@ def show_eda():
             "Maintenance Metrics"
         ])
         
+        # Customer Demographics Tab
         with uni_tab1:
             st.subheader("Customer Demographics Analysis")
-            # Placeholder for demographic visualizations
-            st.write("Demographics visualizations coming soon")
             
+            # Define demographic columns
+            demographic_numeric = ['AGE', 'INCOME', 'HOME_VAL', 'YOJ']
+            demographic_categorical = ['EDUCATION', 'OCCUPATION', 'GENDER', 'MSTATUS', 'PARENT1']
+            
+            # Create two columns for layout
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.write("#### Numeric Variables Analysis")
+                # Variable selector for numeric variables
+                selected_numeric = st.selectbox(
+                    "Select Numeric Variable",
+                    demographic_numeric
+                )
+                
+                # Plot type selector
+                plot_type = st.radio(
+                    "Select Plot Type",
+                    ["Histogram", "Box Plot", "Violin Plot"]
+                )
+                
+                # Create figure based on selection
+                fig = go.Figure()
+                
+                if plot_type == "Histogram":
+                    # Add histogram with KDE
+                    fig.add_trace(go.Histogram(
+                        x=merged_dataset[selected_numeric],
+                        name="Distribution",
+                        nbinsx=st.slider("Number of Bins", 10, 100, 50),
+                        histnorm='probability density'
+                    ))
+                    
+                    # Add KDE
+                    kde = gaussian_kde(merged_dataset[selected_numeric].dropna())
+                    x_range = np.linspace(
+                        merged_dataset[selected_numeric].min(),
+                        merged_dataset[selected_numeric].max(),
+                        100
+                    )
+                    fig.add_trace(go.Scatter(
+                        x=x_range,
+                        y=kde(x_range),
+                        name="KDE",
+                        line=dict(color='red')
+                    ))
+                
+                elif plot_type == "Box Plot":
+                    fig.add_trace(go.Box(
+                        y=merged_dataset[selected_numeric],
+                        name=selected_numeric,
+                        boxpoints='outliers'
+                    ))
+                
+                else:  # Violin Plot
+                    fig.add_trace(go.Violin(
+                        y=merged_dataset[selected_numeric],
+                        name=selected_numeric,
+                        box_visible=True,
+                        meanline_visible=True
+                    ))
+                
+                # Update layout
+                fig.update_layout(
+                    title=f"{selected_numeric} Distribution",
+                    xaxis_title=selected_numeric,
+                    yaxis_title="Frequency" if plot_type == "Histogram" else "Value",
+                    showlegend=True,
+                    height=400
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display summary statistics
+                st.write("#### Summary Statistics")
+                summary_stats = merged_dataset[selected_numeric].describe()
+                st.dataframe(summary_stats)
+            
+            with col2:
+                st.write("#### Categorical Variables Analysis")
+                # Variable selector for categorical variables
+                selected_categorical = st.selectbox(
+                    "Select Categorical Variable",
+                    demographic_categorical
+                )
+                
+                # Plot type selector for categorical
+                cat_plot_type = st.radio(
+                    "Select Plot Type",
+                    ["Bar Plot", "Pie Chart"],
+                    key="cat_plot_type"
+                )
+                
+                # Calculate value counts
+                value_counts = merged_dataset[selected_categorical].value_counts()
+                
+                # Create figure based on selection
+                if cat_plot_type == "Bar Plot":
+                    fig = go.Figure(data=[
+                        go.Bar(
+                            x=value_counts.index,
+                            y=value_counts.values,
+                            text=value_counts.values,
+                            textposition='auto',
+                        )
+                    ])
+                else:  # Pie Chart
+                    fig = go.Figure(data=[
+                        go.Pie(
+                            labels=value_counts.index,
+                            values=value_counts.values,
+                            hole=0.3,
+                            textinfo='percent+label'
+                        )
+                    ])
+                
+                # Update layout
+                fig.update_layout(
+                    title=f"{selected_categorical} Distribution",
+                    height=400,
+                    showlegend=True if cat_plot_type == "Pie Chart" else False
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display frequency table
+                st.write("#### Frequency Table")
+                freq_df = pd.DataFrame({
+                    'Count': value_counts,
+                    'Percentage': (value_counts / len(merged_dataset) * 100).round(2)
+                })
+                st.dataframe(freq_df)
+        
+        # Other tabs remain as placeholders for now
         with uni_tab2:
             st.subheader("Vehicle Characteristics Analysis")
-            # Placeholder for vehicle characteristics
             st.write("Vehicle analysis coming soon")
             
         with uni_tab3:
             st.subheader("Risk Indicators Analysis")
-            # Placeholder for risk indicators
             st.write("Risk analysis coming soon")
             
         with uni_tab4:
             st.subheader("Maintenance Metrics Analysis")
-            # Placeholder for maintenance metrics
             st.write("Maintenance analysis coming soon")
 
     # Bivariate Analysis Tab
