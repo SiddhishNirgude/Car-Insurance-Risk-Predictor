@@ -2552,6 +2552,158 @@ def show_eda():
                 - Combined safety feature implications
                 """)
 
+# Cross-Target Analysis Tab
+        with bi_tab4:
+            st.subheader("Cross-Target Analysis")
+            
+            # Maintenance vs Claims Analysis
+            st.write("#### Maintenance and Claims Relationship")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Maintenance vs CLAIM_FLAG
+                maint_claim = pd.crosstab(
+                    balanced_data_cleaned['Need_Maintenance'],
+                    balanced_data_cleaned['CLAIM_FLAG'],
+                    normalize='index'
+                ) * 100
+                
+                fig_maint_claim = go.Figure(data=[
+                    go.Bar(
+                        x=['No Maintenance Needed', 'Maintenance Needed'],
+                        y=maint_claim[1],
+                        name='Claim Rate',
+                        marker_color='#e74c3c'
+                    )
+                ])
+                
+                fig_maint_claim.update_layout(
+                    title="Claim Rate by Maintenance Status",
+                    xaxis_title="Maintenance Status",
+                    yaxis_title="Claim Rate (%)",
+                    height=400
+                )
+                st.plotly_chart(fig_maint_claim, use_container_width=True)
+            
+            with col2:
+                # Maintenance vs is_claim
+                maint_is_claim = pd.crosstab(
+                    balanced_data_cleaned['Need_Maintenance'],
+                    balanced_data_cleaned['is_claim'],
+                    normalize='index'
+                ) * 100
+                
+                fig_maint_is_claim = go.Figure(data=[
+                    go.Bar(
+                        x=['No Maintenance Needed', 'Maintenance Needed'],
+                        y=maint_is_claim[1],
+                        name='Insurance Claim Rate',
+                        marker_color='#2ecc71'
+                    )
+                ])
+                
+                fig_maint_is_claim.update_layout(
+                    title="Insurance Claim Rate by Maintenance Status",
+                    xaxis_title="Maintenance Status",
+                    yaxis_title="Insurance Claim Rate (%)",
+                    height=400
+                )
+                st.plotly_chart(fig_maint_is_claim, use_container_width=True)
+            
+            # Claim Types Comparison
+            st.write("#### Claim Types Comparison")
+            
+            # Create correlation matrix between target variables
+            target_vars = ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']
+            target_corr = balanced_data_cleaned[target_vars].corr()
+            
+            fig_corr = go.Figure(data=go.Heatmap(
+                z=target_corr,
+                x=target_vars,
+                y=target_vars,
+                colorscale='RdBu',
+                text=np.round(target_corr, 2),
+                texttemplate='%{text}',
+                textfont={"size": 14},
+                colorbar=dict(title='Correlation')
+            ))
+            
+            fig_corr.update_layout(
+                title="Correlation between Different Claim Types",
+                height=400
+            )
+            
+            st.plotly_chart(fig_corr, use_container_width=True)
+            
+            # Risk Factor Distribution
+            st.write("#### Risk Factor Distribution Across Claim Types")
+            
+            # Select key risk factors
+            risk_factors = ['MVR_PTS', 'OLDCLAIM', 'CLM_FREQ']
+            
+            # Create a combined visualization for risk factors across claim types
+            risk_data = []
+            
+            for factor in risk_factors:
+                # Calculate mean values for each target variable
+                for target in target_vars:
+                    mean_values = balanced_data_cleaned.groupby(target)[factor].mean()
+                    for category in [0, 1]:
+                        risk_data.append({
+                            'Risk_Factor': factor,
+                            'Target_Type': target,
+                            'Category': 'Yes' if category == 1 else 'No',
+                            'Mean_Value': mean_values[category]
+                        })
+            
+            risk_df = pd.DataFrame(risk_data)
+            
+            # Create grouped bar chart
+            fig_risk = go.Figure()
+            
+            for target in target_vars:
+                target_data = risk_df[risk_df['Target_Type'] == target]
+                fig_risk.add_trace(go.Bar(
+                    name=target,
+                    x=[f"{row['Risk_Factor']} ({row['Category']})" 
+                       for _, row in target_data.iterrows()],
+                    y=target_data['Mean_Value'],
+                    text=np.round(target_data['Mean_Value'], 2),
+                    textposition='auto'
+                ))
+            
+            fig_risk.update_layout(
+                title="Average Risk Factor Values by Claim Type",
+                xaxis_title="Risk Factor (Category)",
+                yaxis_title="Mean Value",
+                barmode='group',
+                height=500
+            )
+            
+            st.plotly_chart(fig_risk, use_container_width=True)
+            
+            # Key Insights
+            st.write("#### Cross-Target Analysis Insights")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **Maintenance-Claim Relationships:**
+                - Impact of maintenance needs on claim likelihood
+                - Differences between claim types for maintained vehicles
+                - Preventive maintenance effectiveness
+                """)
+            
+            with col2:
+                st.markdown("""
+                **Risk Pattern Analysis:**
+                - Common risk factors across claim types
+                - Target variable correlations
+                - Risk factor distribution patterns
+                """)
+
     # Multivariate Analysis Tab
     with tab3:
         st.header("Multivariate Analysis")
