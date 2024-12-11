@@ -1041,9 +1041,197 @@ def show_eda():
                 st.dataframe(freq_df)
         
         # Other tabs remain as placeholders for now
-        with uni_tab2:
+        with uni_tab2:  
             st.subheader("Vehicle Characteristics Analysis")
-            st.write("Vehicle analysis coming soon")
+            
+            # Define vehicle-related columns
+            vehicle_numeric = [
+                'max_torque', 'max_power', 'displacement', 'turning_radius',
+                'length', 'width', 'height', 'gross_weight', 'Mileage',
+                'Engine_Size', 'CAR_AGE'
+            ]
+            
+            vehicle_categorical = [
+                'CAR_TYPE_Panel Truck', 'CAR_TYPE_Pickup', 'CAR_TYPE_SUV',
+                'CAR_TYPE_Sports Car', 'CAR_TYPE_Van', 'segment_B1', 'segment_B2',
+                'segment_C1', 'segment_C2', 'segment_Utility', 'fuel_type_Diesel',
+                'fuel_type_Petrol'
+            ]
+            
+            # Create two columns for layout
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.write("#### Performance & Dimensions Analysis")
+                # Variable selector for numeric variables
+                selected_numeric = st.selectbox(
+                    "Select Vehicle Metric",
+                    vehicle_numeric,
+                    key="vehicle_numeric"
+                )
+                
+                # Plot type selector
+                plot_type = st.radio(
+                    "Select Plot Type",
+                    ["Histogram", "Box Plot", "Violin Plot"],
+                    key="vehicle_plot_type"
+                )
+                
+                # Create figure based on selection
+                fig = go.Figure()
+                
+                if plot_type == "Histogram":
+                    # Add histogram with KDE
+                    fig.add_trace(go.Histogram(
+                        x=balanced_data_cleaned[selected_numeric],
+                        name="Distribution",
+                        nbinsx=st.slider("Number of Bins", 10, 100, 50, key="vehicle_bins"),
+                        histnorm='probability density'
+                    ))
+                    
+                    # Add KDE
+                    kde = gaussian_kde(balanced_data_cleaned[selected_numeric].dropna())
+                    x_range = np.linspace(
+                        balanced_data_cleaned[selected_numeric].min(),
+                        balanced_data_cleaned[selected_numeric].max(),
+                        100
+                    )
+                    fig.add_trace(go.Scatter(
+                        x=x_range,
+                        y=kde(x_range),
+                        name="KDE",
+                        line=dict(color='red')
+                    ))
+                
+                elif plot_type == "Box Plot":
+                    fig.add_trace(go.Box(
+                        y=balanced_data_cleaned[selected_numeric],
+                        name=selected_numeric,
+                        boxpoints='outliers'
+                    ))
+                
+                else:  # Violin Plot
+                    fig.add_trace(go.Violin(
+                        y=balanced_data_cleaned[selected_numeric],
+                        name=selected_numeric,
+                        box_visible=True,
+                        meanline_visible=True
+                    ))
+                
+                # Update layout
+                fig.update_layout(
+                    title=f"{selected_numeric} Distribution",
+                    xaxis_title=selected_numeric,
+                    yaxis_title="Frequency" if plot_type == "Histogram" else "Value",
+                    showlegend=True,
+                    height=400
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display summary statistics
+                st.write("#### Summary Statistics")
+                summary_stats = balanced_data_cleaned[selected_numeric].describe()
+                st.dataframe(summary_stats)
+            
+            with col2:
+                st.write("#### Vehicle Type & Features Analysis")
+                
+                # Combine car types into a single column for better visualization
+                car_types = balanced_data_cleaned[[
+                    'CAR_TYPE_Panel Truck', 'CAR_TYPE_Pickup', 'CAR_TYPE_SUV',
+                    'CAR_TYPE_Sports Car', 'CAR_TYPE_Van'
+                ]].idxmax(axis=1).map(lambda x: x.replace('CAR_TYPE_', ''))
+                
+                # Calculate car type distribution
+                car_type_dist = car_types.value_counts()
+                
+                # Create pie chart for car types
+                fig_car_types = go.Figure(data=[
+                    go.Pie(
+                        labels=car_type_dist.index,
+                        values=car_type_dist.values,
+                        hole=0.3,
+                        textinfo='percent+label'
+                    )
+                ])
+                
+                fig_car_types.update_layout(
+                    title="Distribution of Vehicle Types",
+                    height=400
+                )
+                
+                st.plotly_chart(fig_car_types, use_container_width=True)
+                
+                # Segment analysis
+                st.write("#### Vehicle Segment Analysis")
+                
+                # Combine segments into a single column
+                segments = balanced_data_cleaned[[
+                    'segment_B1', 'segment_B2', 'segment_C1',
+                    'segment_C2', 'segment_Utility'
+                ]].idxmax(axis=1).map(lambda x: x.replace('segment_', ''))
+                
+                segment_dist = segments.value_counts()
+                
+                # Create bar chart for segments
+                fig_segments = go.Figure(data=[
+                    go.Bar(
+                        x=segment_dist.index,
+                        y=segment_dist.values,
+                        text=segment_dist.values,
+                        textposition='auto'
+                    )
+                ])
+                
+                fig_segments.update_layout(
+                    title="Distribution of Vehicle Segments",
+                    xaxis_title="Segment",
+                    yaxis_title="Count",
+                    height=400
+                )
+                
+                st.plotly_chart(fig_segments, use_container_width=True)
+                
+            # Additional section for fuel type analysis
+            st.write("#### Fuel Type Analysis")
+            
+            # Calculate fuel type distribution
+            fuel_types = balanced_data_cleaned[[
+                'fuel_type_Diesel', 'fuel_type_Petrol'
+            ]].idxmax(axis=1).map(lambda x: x.replace('fuel_type_', ''))
+            
+            fuel_dist = fuel_types.value_counts()
+            
+            # Create horizontal bar chart for fuel types
+            fig_fuel = go.Figure(data=[
+                go.Bar(
+                    y=fuel_dist.index,
+                    x=fuel_dist.values,
+                    text=fuel_dist.values,
+                    textposition='auto',
+                    orientation='h'
+                )
+            ])
+            
+            fig_fuel.update_layout(
+                title="Distribution of Fuel Types",
+                xaxis_title="Count",
+                yaxis_title="Fuel Type",
+                height=300
+            )
+            
+            st.plotly_chart(fig_fuel, use_container_width=True)
+            
+            # Add insights section
+            st.write("#### Key Insights")
+            st.markdown("""
+            - Vehicle Type Distribution shows the relative market share of different vehicle categories
+            - Segment Analysis reveals the positioning of vehicles in different market segments
+            - Performance Metrics (power, torque, displacement) indicate the technical capabilities
+            - Dimensional Analysis shows the physical characteristics distribution
+            - Fuel Type Distribution indicates the prevalence of different fuel technologies
+            """)
             
         with uni_tab3:
             st.subheader("Risk Indicators Analysis")
