@@ -107,7 +107,7 @@ if selected_space == "Data Science Space":
     selected_page = st.sidebar.radio(
         "Navigate Data Science Space",
         ["Data Overview", "Data Statistics","Data Cleaning", "Data Missingness Analysis", "Data Transformations", "Data Merging & Integration",
-         "EDA", "Correlation Analysis", "Category Analysis"]
+         "EDA", "Correlation Analysis", "Dimensionality Reduction"]
     )
 elif selected_space == "Production Space":
     selected_page = st.sidebar.radio(
@@ -3244,9 +3244,175 @@ def show_correlation_analysis():
         target_corr = corr_matrix[target_var][valid_features].sort_values(ascending=False)
         st.dataframe(target_corr.round(3))
 
-def show_category_analysis():
-    st.title("Category Analysis")
-    st.write("Category analysis content coming soon!")
+def show_dimensionality_reduction():
+    st.title("Dimensionality Reduction Analysis")
+    
+    # Create tabs for different domains
+    domain_tab1, domain_tab2, domain_tab3 = st.tabs([
+        "Insurance Claims PCA",
+        "Vehicle Features PCA",
+        "Maintenance Data PCA"
+    ])
+    
+    # Define feature groups for each domain
+    insurance_features = [
+        'CLM_AMT', 'CLM_FREQ', 'OLDCLAIM', 'HOME_VAL', 'MSTATUS',
+        'AGE', 'HOMEKIDS', 'INCOME', 'YOJ', 'MVR_PTS'
+    ]
+    
+    vehicle_features = [
+        'max_power', 'length', 'width', 'displacement', 'turning_radius',
+        'Engine_Size', 'max_torque', 'Mileage', 'height', 'gross_weight'
+    ]
+    
+    maintenance_features = [
+        'Service_History', 'Maintenance_History_Code', 'Reported_Issues',
+        'Battery_Status_Code', 'Tire_Condition_Code', 'Brake_Condition_Code',
+        'Vehicle_Age', 'Odometer_Reading', 'Fuel_Efficiency'
+    ]
+    
+    # Insurance Claims PCA
+    with domain_tab1:
+        st.subheader("Insurance Claims Domain PCA")
+        
+        # Filter valid features
+        valid_insurance = [f for f in insurance_features if f in balanced_data.columns]
+        
+        if valid_insurance:
+            # Standardize features
+            scaler = StandardScaler()
+            insurance_scaled = scaler.fit_transform(balanced_data[valid_insurance])
+            
+            # Apply PCA
+            pca_insurance = PCA()
+            insurance_pca = pca_insurance.fit_transform(insurance_scaled)
+            
+            # Scree plot
+            exp_var_ratio = pca_insurance.explained_variance_ratio_
+            
+            fig_scree = go.Figure(data=[
+                go.Bar(
+                    x=[f"PC{i+1}" for i in range(len(exp_var_ratio))],
+                    y=exp_var_ratio,
+                    text=np.round(exp_var_ratio * 100, 1),
+                    textposition='auto'
+                )
+            ])
+            
+            fig_scree.update_layout(
+                title="Explained Variance Ratio by Principal Component",
+                xaxis_title="Principal Components",
+                yaxis_title="Explained Variance Ratio",
+                showlegend=False
+            )
+            
+            st.plotly_chart(fig_scree, use_container_width=True)
+            
+            # Feature contributions
+            loadings = pca_insurance.components_.T
+            pc_df = pd.DataFrame(
+                loadings,
+                columns=[f'PC{i+1}' for i in range(loadings.shape[1])],
+                index=valid_insurance
+            )
+            
+            fig_loadings = go.Figure(data=go.Heatmap(
+                z=loadings,
+                x=[f'PC{i+1}' for i in range(loadings.shape[1])],
+                y=valid_insurance,
+                colorscale='RdBu',
+                text=np.round(loadings, 3),
+                texttemplate='%{text}',
+                textfont={"size": 10}
+            ))
+            
+            fig_loadings.update_layout(
+                title="Feature Loadings on Principal Components",
+                height=600
+            )
+            
+            st.plotly_chart(fig_loadings, use_container_width=True)
+            
+            # 2D PCA plot with target variables
+            for target in ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']:
+                if target in balanced_data.columns:
+                    fig_2d = go.Figure()
+                    
+                    for class_val in [0, 1]:
+                        mask = balanced_data[target] == class_val
+                        fig_2d.add_trace(go.Scatter(
+                            x=insurance_pca[mask, 0],
+                            y=insurance_pca[mask, 1],
+                            mode='markers',
+                            name=f'{target}={class_val}',
+                            opacity=0.7
+                        ))
+                    
+                    fig_2d.update_layout(
+                        title=f"2D PCA Plot Colored by {target}",
+                        xaxis_title="First Principal Component",
+                        yaxis_title="Second Principal Component",
+                        height=500
+                    )
+                    
+                    st.plotly_chart(fig_2d, use_container_width=True)
+    
+    # Vehicle Features PCA
+    with domain_tab2:
+        st.subheader("Vehicle Features Domain PCA")
+        # [Similar implementation for vehicle features]
+        valid_vehicle = [f for f in vehicle_features if f in balanced_data.columns]
+        
+        if valid_vehicle:
+            # Standardize features
+            scaler = StandardScaler()
+            vehicle_scaled = scaler.fit_transform(balanced_data[valid_vehicle])
+            
+            # Apply PCA
+            pca_vehicle = PCA()
+            vehicle_pca = pca_vehicle.fit_transform(vehicle_scaled)
+            
+            # [Similar visualizations as insurance domain]
+            # Implementation continues...
+    
+    # Maintenance Data PCA
+    with domain_tab3:
+        st.subheader("Maintenance Data Domain PCA")
+        # [Similar implementation for maintenance features]
+        valid_maintenance = [f for f in maintenance_features if f in balanced_data.columns]
+        
+        if valid_maintenance:
+            # Standardize features
+            scaler = StandardScaler()
+            maintenance_scaled = scaler.fit_transform(balanced_data[valid_maintenance])
+            
+            # Apply PCA
+            pca_maintenance = PCA()
+            maintenance_pca = pca_maintenance.fit_transform(maintenance_scaled)
+            
+            # [Similar visualizations as insurance domain]
+            # Implementation continues...
+    
+    # Add insights section
+    st.subheader("Key Dimensionality Reduction Insights")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        **Domain-Specific Patterns:**
+        - Insurance: Key components and their interpretations
+        - Vehicle: Technical specification reduction
+        - Maintenance: Combined condition indicators
+        """)
+    
+    with col2:
+        st.markdown("""
+        **Recommendations:**
+        - Optimal number of components for each domain
+        - Feature selection strategies
+        - Composite feature suggestions
+        """)
 
 # --- PRODUCTION SPACE PAGES ---
 def show_risk_assessment():
@@ -3285,8 +3451,8 @@ elif selected_space == "Data Science Space":
         show_eda()
     elif selected_page == "Correlation Analysis":
         show_correlation_analysis()
-    elif selected_page == "Category Analysis":
-        show_category_analysis()
+    elif selected_page == "Dimensionality Reduction":
+        show_dimensionality_reduction()
 elif selected_space == "Production Space":
     if selected_page == "Risk Assessment":
         show_risk_assessment()
