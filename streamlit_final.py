@@ -2717,15 +2717,47 @@ def show_eda():
         
 
 # Multivariate Analysis - Correlation Analysis
+
         with multi_tab1:
             st.header("Correlation Analysis")
             
-            # Define feature groups
+            # Define feature groups with comprehensive columns
             feature_groups = {
-                'Demographics': ['AGE', 'INCOME', 'EDUCATION', 'OCCUPATION', 'TRAVTIME', 'MSTATUS', 'GENDER'],
-                'Vehicle': ['CAR_AGE', 'max_power', 'max_torque', 'Mileage', 'displacement', 'Engine_Size'],
-                'Safety': ['airbags', 'ncap_rating', 'is_brake_assist', 'is_parking_sensors', 'is_tpms', 'is_esc'],
-                'Risk': ['MVR_PTS', 'CLM_FREQ', 'OLDCLAIM', 'Reported_Issues', 'Accident_History']
+                'Demographics': [
+                    'AGE', 'INCOME', 'HOME_VAL', 'YOJ', 'TRAVTIME', 'KIDSDRIV', 'HOMEKIDS',
+                    'PARENT1', 'MSTATUS', 'GENDER'
+                ],
+                
+                'Vehicle Specifications': [
+                    'CAR_AGE', 'max_power', 'max_torque', 'displacement', 'Engine_Size',
+                    'turning_radius', 'length', 'width', 'height', 'gross_weight',
+                    'Mileage', 'Fuel_Efficiency', 'cylinder', 'gear_box'
+                ],
+                
+                'Safety Features': [
+                    'airbags', 'ncap_rating', 'is_brake_assist', 'is_parking_sensors',
+                    'is_tpms', 'is_esc', 'is_parking_camera', 'is_front_fog_lights',
+                    'is_speed_alert', 'is_central_locking', 'is_power_steering',
+                    'is_day_night_rear_view_mirror', 'is_ecw'
+                ],
+                
+                'Risk and Claims': [
+                    'MVR_PTS', 'CLM_FREQ', 'OLDCLAIM', 'CLM_AMT', 'TIF',
+                    'Reported_Issues', 'Accident_History', 'Insurance_Premium'
+                ],
+                
+                'Maintenance Indicators': [
+                    'Vehicle_Age', 'Odometer_Reading', 'Service_History',
+                    'Maintenance_History_Code', 'Tire_Condition_Code',
+                    'Brake_Condition_Code', 'Battery_Status_Code'
+                ],
+                
+                'Vehicle Type Indicators': [
+                    'CAR_TYPE_Panel Truck', 'CAR_TYPE_Pickup', 'CAR_TYPE_SUV',
+                    'CAR_TYPE_Sports Car', 'CAR_TYPE_Van', 'segment_B1', 'segment_B2',
+                    'segment_C1', 'segment_C2', 'segment_Utility', 'fuel_type_Diesel',
+                    'fuel_type_Petrol', 'transmission_type_Manual'
+                ]
             }
             
             # Target variables
@@ -2739,127 +2771,176 @@ def show_eda():
             
             for tab, (group_name, features) in zip(group_tabs, feature_groups.items()):
                 with tab:
-                    # Calculate correlation matrix for the group
-                    valid_features = [f for f in features if f in balanced_data_cleaned.columns]
-                    if valid_features:
-                        corr_matrix = balanced_data_cleaned[valid_features].corr()
+                    try:
+                        # Filter for available columns
+                        valid_features = [f for f in features if f in balanced_data.columns]
                         
-                        # Create heatmap
-                        fig = go.Figure(data=go.Heatmap(
-                            z=corr_matrix,
-                            x=valid_features,
-                            y=valid_features,
-                            colorscale='RdBu',
-                            zmin=-1,
-                            zmax=1,
-                            text=np.round(corr_matrix, 2),
-                            texttemplate='%{text}',
-                            textfont={"size": 10}
-                        ))
-                        
-                        fig.update_layout(
-                            title=f"{group_name} Features Correlation Heatmap",
-                            height=500
-                        )
-                        
-                        st.plotly_chart(fig, use_container_width=True)
+                        if valid_features:
+                            corr_matrix = balanced_data[valid_features].corr()
+                            
+                            # Create heatmap with improved layout
+                            fig = go.Figure(data=go.Heatmap(
+                                z=corr_matrix,
+                                x=valid_features,
+                                y=valid_features,
+                                colorscale='RdBu',
+                                zmin=-1,
+                                zmax=1,
+                                text=np.round(corr_matrix, 2),
+                                texttemplate='%{text}',
+                                textfont={"size": 10}
+                            ))
+                            
+                            # Update layout for better readability
+                            fig.update_layout(
+                                title=f"{group_name} Features Correlation Heatmap",
+                                height=700,  # Increased height
+                                xaxis={'tickangle': 45},  # Angled labels
+                                margin=dict(t=100, l=100, r=100, b=100)  # Increased margins
+                            )
+                            
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                            # Add correlation with target variables
+                            st.write("#### Correlation with Target Variables")
+                            target_corr = balanced_data[valid_features + target_vars].corr().loc[target_vars, valid_features]
+                            
+                            # Create heatmap for target correlations
+                            fig_target = go.Figure(data=go.Heatmap(
+                                z=target_corr,
+                                x=valid_features,
+                                y=target_vars,
+                                colorscale='RdBu',
+                                zmin=-1,
+                                zmax=1,
+                                text=np.round(target_corr, 2),
+                                texttemplate='%{text}',
+                                textfont={"size": 10}
+                            ))
+                            
+                            fig_target.update_layout(
+                                title=f"{group_name} Features Correlation with Target Variables",
+                                height=300,
+                                xaxis={'tickangle': 45},
+                                margin=dict(t=100, l=100, r=100, b=100)
+                            )
+                            
+                            st.plotly_chart(fig_target, use_container_width=True)
+                            
+                        else:
+                            st.warning(f"No valid features available for {group_name} group")
+                            
+                    except Exception as e:
+                        st.error(f"Error processing {group_name} group: {str(e)}")
             
             # Feature Importance Analysis
             st.subheader("Feature Importance Analysis")
             
-            # Calculate correlations with target variables
+            # Get all features
             all_features = [item for sublist in feature_groups.values() for item in sublist]
-            valid_features = [f for f in all_features if f in balanced_data_cleaned.columns]
+            valid_features = [f for f in all_features if f in balanced_data.columns]
             
-            target_correlations = {}
-            for target in target_vars:
-                correlations = []
-                for feature in valid_features:
-                    try:
-                        corr = balanced_data_cleaned[feature].corr(balanced_data_cleaned[target])
-                        correlations.append((feature, abs(corr)))
-                    except:
-                        continue
-                
-                # Sort by absolute correlation
-                correlations.sort(key=lambda x: x[1], reverse=True)
-                target_correlations[target] = correlations[:10]  # Top 10
-            
-            # Create visualization for top correlations
-            col1, col2 = st.columns(2)
+            # Create two columns for visualization
+            col1, col2 = st.columns([2, 1])
             
             with col1:
-                # Top correlations bar chart
-                for target, correlations in target_correlations.items():
-                    features, corr_values = zip(*correlations)
+                # Top correlations with target variables
+                for target in target_vars:
+                    correlations = []
+                    for feature in valid_features:
+                        try:
+                            corr = balanced_data[feature].corr(balanced_data[target])
+                            correlations.append((feature, abs(corr)))
+                        except:
+                            continue
                     
-                    fig = go.Figure(data=[
-                        go.Bar(
-                            x=corr_values,
-                            y=features,
-                            orientation='h',
-                            text=np.round(corr_values, 3),
-                            textposition='auto',
+                    # Sort by absolute correlation
+                    correlations.sort(key=lambda x: x[1], reverse=True)
+                    top_correlations = correlations[:15]  # Increased to top 15
+                    
+                    if top_correlations:
+                        features, corr_values = zip(*top_correlations)
+                        
+                        fig = go.Figure(data=[
+                            go.Bar(
+                                x=corr_values,
+                                y=features,
+                                orientation='h',
+                                text=np.round(corr_values, 3),
+                                textposition='auto',
+                            )
+                        ])
+                        
+                        fig.update_layout(
+                            title=f"Top 15 Correlations with {target}",
+                            xaxis_title="Absolute Correlation",
+                            yaxis_title="Feature",
+                            height=500,
+                            margin=dict(l=200)  # Increased left margin for feature names
                         )
-                    ])
-                    
-                    fig.update_layout(
-                        title=f"Top 10 Correlations with {target}",
-                        xaxis_title="Absolute Correlation",
-                        yaxis_title="Feature",
-                        height=400
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
+                        
+                        st.plotly_chart(fig, use_container_width=True)
             
             with col2:
-                # Identify multicollinearity
+                # Multicollinearity Analysis with improved visualization
                 st.write("#### Multicollinearity Analysis")
                 
-                # Get highly correlated feature pairs
-                high_corr_pairs = []
-                corr_matrix = balanced_data_cleaned[valid_features].corr()
+                # Correlation threshold selector
+                corr_threshold = st.slider("Correlation Threshold", 0.5, 1.0, 0.7, 0.05)
                 
-                for i in range(len(valid_features)):
-                    for j in range(i+1, len(valid_features)):
-                        corr_value = abs(corr_matrix.iloc[i, j])
-                        if corr_value > 0.7:  # Threshold for high correlation
-                            high_corr_pairs.append({
-                                'Feature 1': valid_features[i],
-                                'Feature 2': valid_features[j],
-                                'Correlation': corr_value
-                            })
-                
-                if high_corr_pairs:
-                    high_corr_df = pd.DataFrame(high_corr_pairs)
-                    high_corr_df = high_corr_df.sort_values('Correlation', ascending=False)
+                try:
+                    high_corr_pairs = []
+                    corr_matrix = balanced_data[valid_features].corr()
                     
-                    st.write("Highly Correlated Feature Pairs (|correlation| > 0.7):")
-                    st.dataframe(high_corr_df.round(3))
-                else:
-                    st.write("No feature pairs with correlation > 0.7 found.")
-            
-            # Key Insights
-            st.subheader("Correlation Analysis Insights")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("""
-                **Feature Group Patterns:**
-                - Key demographic correlations
-                - Vehicle feature relationships
-                - Safety feature interdependencies
-                - Risk indicator associations
-                """)
-            
-            with col2:
-                st.markdown("""
-                **Target Variable Relations:**
-                - Strongest predictive features
-                - Potential feature redundancies
-                - Group-specific importance
-                """)
+                    for i in range(len(valid_features)):
+                        for j in range(i+1, len(valid_features)):
+                            corr_value = abs(corr_matrix.iloc[i, j])
+                            if corr_value > corr_threshold:
+                                high_corr_pairs.append({
+                                    'Feature 1': valid_features[i],
+                                    'Feature 2': valid_features[j],
+                                    'Correlation': corr_value
+                                })
+                    
+                    if high_corr_pairs:
+                        high_corr_df = pd.DataFrame(high_corr_pairs)
+                        high_corr_df = high_corr_df.sort_values('Correlation', ascending=False)
+                        
+                        st.write(f"Highly Correlated Feature Pairs (|correlation| > {corr_threshold}):")
+                        st.dataframe(high_corr_df.round(3))
+                        
+                        # Add visualization for high correlations
+                        fig = go.Figure(data=[
+                            go.Scatter(
+                                x=high_corr_df['Feature 1'],
+                                y=high_corr_df['Feature 2'],
+                                mode='markers',
+                                marker=dict(
+                                    size=high_corr_df['Correlation'] * 50,
+                                    color=high_corr_df['Correlation'],
+                                    colorscale='Viridis',
+                                    showscale=True
+                                ),
+                                text=high_corr_df['Correlation'].round(3),
+                                hovertemplate="<b>Features:</b><br>%{x}<br>%{y}<br><b>Correlation:</b> %{text}<extra></extra>"
+                            )
+                        ])
+                        
+                        fig.update_layout(
+                            title="Highly Correlated Features",
+                            xaxis_title="Feature 1",
+                            yaxis_title="Feature 2",
+                            height=500,
+                            xaxis={'tickangle': 45}
+                        )
+                        
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                    else:
+                        st.write(f"No feature pairs with correlation > {corr_threshold} found.")
+                        
+                except Exception as e:
+                    st.error(f"Error in multicollinearity analysis: {str(e)}")
             
         with multi_tab2:
             st.subheader("Dimensionality Reduction")
