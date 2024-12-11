@@ -831,7 +831,7 @@ def plot_pie_chart(class_distribution):
     ax.axis('equal')
     return fig
         
-
+### A. For Customer Demographics tab
 # Add this function at the start of your show_eda function
 def clean_categorical_columns(df):
     """
@@ -877,6 +877,8 @@ def clean_categorical_columns(df):
 
     return df_cleaned
 
+
+### C. For risk_indicators tab
 def process_risk_indicators(df):
     """
     Process risk indicator columns to map encoded values back to meaningful categories.
@@ -955,6 +957,143 @@ def get_risk_category_descriptions():
             'Severe Accidents': 'Severe or frequent accidents (Score > 3)'
         }
     }
+
+
+### D. For maintenance_metric tab
+def process_maintenance_metrics(df):
+    """
+    Process maintenance metric columns to map values back to meaningful categories.
+    
+    Args:
+        df: DataFrame containing the maintenance metric columns
+    
+    Returns:
+        DataFrame with processed maintenance metrics
+    """
+    df_processed = df.copy()
+    
+    # Component Condition Mappings
+    maintenance_history_map = {
+        0: 'Poor',
+        1: 'Average',
+        2: 'Good'
+    }
+    
+    condition_map = {
+        0: 'Worn out',
+        1: 'Good',
+        2: 'New'
+    }
+    
+    owner_type_map = {
+        0: '1st Owner',
+        1: '2nd Owner',
+        2: '3rd Owner'
+    }
+    
+    # Map categorical values
+    df_processed['Maintenance_History_CAT'] = df_processed['Maintenance_History_Code'].map(maintenance_history_map)
+    df_processed['Tire_Condition_CAT'] = df_processed['Tire_Condition_Code'].map(condition_map)
+    df_processed['Owner_Type_CAT'] = df_processed['Owner_Type_Code'].map(owner_type_map)
+    
+    # Handle Brake Condition including potential float values
+    df_processed['Brake_Condition_Code'] = df_processed['Brake_Condition_Code'].round().astype(int)
+    df_processed['Brake_Condition_CAT'] = df_processed['Brake_Condition_Code'].map(condition_map)
+    
+    # Handle Battery Status including potential float values
+    df_processed['Battery_Status_Code'] = df_processed['Battery_Status_Code'].round().astype(int)
+    battery_map = {
+        0: 'Weak',
+        1: 'Good',
+        2: 'New'
+    }
+    df_processed['Battery_Status_CAT'] = df_processed['Battery_Status_Code'].map(battery_map)
+    
+    # Create color schemes for visualizations
+    condition_colors = {
+        'Poor': '#e74c3c',
+        'Average': '#f39c12',
+        'Good': '#2ecc71',
+        'Worn out': '#e74c3c',
+        'New': '#2ecc71',
+        'Weak': '#e74c3c'
+    }
+    
+    # Create category descriptions
+    maintenance_categories = {
+        'Maintenance_History': {
+            'Poor': 'Irregular or minimal maintenance record',
+            'Average': 'Regular but basic maintenance',
+            'Good': 'Comprehensive and timely maintenance'
+        },
+        'Tire_Condition': {
+            'Worn out': 'Requires immediate replacement',
+            'Good': 'Functional with acceptable wear',
+            'New': 'Recently replaced or minimal wear'
+        },
+        'Brake_Condition': {
+            'Worn out': 'Requires immediate service',
+            'Good': 'Functional with normal wear',
+            'New': 'Recently serviced or minimal wear'
+        },
+        'Battery_Status': {
+            'Weak': 'May need replacement soon',
+            'Good': 'Functioning properly',
+            'New': 'Recently replaced or excellent condition'
+        },
+        'Owner_Type': {
+            '1st Owner': 'Original owner of the vehicle',
+            '2nd Owner': 'Second owner of the vehicle',
+            '3rd Owner': 'Third or subsequent owner'
+        }
+    }
+    
+    return df_processed, condition_colors, maintenance_categories
+
+def group_scaled_values(value, ranges, labels):
+    """
+    Helper function to group scaled values into meaningful categories
+    
+    Args:
+        value: The scaled value to categorize
+        ranges: List of range boundaries
+        labels: List of labels for each range
+        
+    Returns:
+        Appropriate label for the value
+    """
+    for i, r in enumerate(ranges[:-1]):
+        if value <= r:
+            return labels[i]
+    return labels[-1]
+
+def add_maintenance_insights(df):
+    """
+    Calculate key maintenance insights from the data
+    
+    Args:
+        df: Processed DataFrame with maintenance metrics
+        
+    Returns:
+        Dictionary containing key insights
+    """
+    insights = {
+        'maintenance_quality': {
+            'good': (df['Maintenance_History_Code'] == 2).mean() * 100,
+            'average': (df['Maintenance_History_Code'] == 1).mean() * 100,
+            'poor': (df['Maintenance_History_Code'] == 0).mean() * 100
+        },
+        'component_health': {
+            'tires_need_replacement': (df['Tire_Condition_Code'] == 0).mean() * 100,
+            'brakes_need_service': (df['Brake_Condition_Code'] == 0).mean() * 100,
+            'battery_weak': (df['Battery_Status_Code'] == 0).mean() * 100
+        }
+    }
+    
+    return insights
+
+
+
 
 # Placeholder functions for additional pages
 def show_eda():
@@ -1501,7 +1640,201 @@ def show_eda():
             
         with uni_tab4:
             st.subheader("Maintenance Metrics Analysis")
-            st.write("Maintenance analysis coming soon")
+            
+            # Process maintenance data with our mappings
+            processed_data, condition_colors, maintenance_categories = process_maintenance_metrics(balanced_data_cleaned)
+            
+            # Define maintenance-related columns
+            maintenance_numeric = [
+                'Service_History',      
+                'Fuel_Efficiency',      
+                'Reported_Issues',      
+                'Vehicle_Age',          
+                'Odometer_Reading'      
+            ]
+            
+            maintenance_categorical = [
+                'Maintenance_History_CAT',  
+                'Tire_Condition_CAT',       
+                'Brake_Condition_CAT',      
+                'Battery_Status_CAT',
+                'Owner_Type_CAT'            
+            ]
+            
+            # Create two columns for layout
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.write("#### Vehicle Service Metrics")
+                
+                # Variable selector for numeric maintenance indicators
+                selected_numeric = st.selectbox(
+                    "Select Service Metric",
+                    maintenance_numeric,
+                    format_func=lambda x: {
+                        'Service_History': 'Service History Score',
+                        'Fuel_Efficiency': 'Fuel Efficiency Rating',
+                        'Reported_Issues': 'Number of Reported Issues',
+                        'Vehicle_Age': 'Vehicle Age',
+                        'Odometer_Reading': 'Odometer Reading'
+                    }[x],
+                    key="maintenance_numeric"
+                )
+                
+                # Plot type selector
+                plot_type = st.radio(
+                    "Select Plot Type",
+                    ["Distribution Plot", "Box Plot"],
+                    key="maintenance_plot_type"
+                )
+                
+                fig = go.Figure()
+                
+                if plot_type == "Distribution Plot":
+                    fig.add_trace(go.Histogram(
+                        x=processed_data[selected_numeric],
+                        nbinsx=30,
+                        name="Distribution"
+                    ))
+                    
+                else:  # Box Plot
+                    fig.add_trace(go.Box(
+                        y=processed_data[selected_numeric],
+                        name=selected_numeric,
+                        boxpoints='outliers'
+                    ))
+                
+                fig.update_layout(
+                    title=f"{selected_numeric} Analysis",
+                    height=400,
+                    showlegend=False
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Add metric summary
+                metric_stats = processed_data[selected_numeric].describe()
+                st.write("#### Summary Statistics")
+                st.dataframe(metric_stats.round(2))
+            
+            with col2:
+                st.write("#### Component Conditions")
+                
+                # Create tabs for conditions and history
+                cond_tab1, cond_tab2 = st.tabs(["Critical Components", "Maintenance & Ownership"])
+                
+                with cond_tab1:
+                    # Tire Condition Analysis
+                    tire_dist = processed_data['Tire_Condition_CAT'].value_counts()
+                    fig_tire = go.Figure(data=[
+                        go.Bar(
+                            x=tire_dist.index,
+                            y=tire_dist.values,
+                            text=tire_dist.values,
+                            textposition='auto',
+                            marker_color=[condition_colors[cat] for cat in tire_dist.index]
+                        )
+                    ])
+                    fig_tire.update_layout(
+                        title="Tire Condition Status",
+                        height=300
+                    )
+                    st.plotly_chart(fig_tire, use_container_width=True)
+                    
+                    # Brake Condition Analysis
+                    brake_dist = processed_data['Brake_Condition_CAT'].value_counts()
+                    fig_brake = go.Figure(data=[
+                        go.Bar(
+                            x=brake_dist.index,
+                            y=brake_dist.values,
+                            text=brake_dist.values,
+                            textposition='auto',
+                            marker_color=[condition_colors[cat] for cat in brake_dist.index]
+                        )
+                    ])
+                    fig_brake.update_layout(
+                        title="Brake System Status",
+                        height=300
+                    )
+                    st.plotly_chart(fig_brake, use_container_width=True)
+                
+                with cond_tab2:
+                    # Maintenance History Analysis
+                    maint_dist = processed_data['Maintenance_History_CAT'].value_counts()
+                    fig_maint = go.Figure(data=[
+                        go.Pie(
+                            labels=maint_dist.index,
+                            values=maint_dist.values,
+                            hole=0.3,
+                            marker_colors=[condition_colors[cat] for cat in maint_dist.index]
+                        )
+                    ])
+                    fig_maint.update_layout(
+                        title="Overall Maintenance History",
+                        height=300
+                    )
+                    st.plotly_chart(fig_maint, use_container_width=True)
+                    
+                    # Owner Type Analysis
+                    owner_dist = processed_data['Owner_Type_CAT'].value_counts()
+                    fig_owner = go.Figure(data=[
+                        go.Bar(
+                            x=owner_dist.index,
+                            y=owner_dist.values,
+                            text=owner_dist.values,
+                            textposition='auto',
+                            marker_color=['#3498db', '#9b59b6', '#95a5a6']
+                        )
+                    ])
+                    fig_owner.update_layout(
+                        title="Vehicle Ownership Distribution",
+                        height=300
+                    )
+                    st.plotly_chart(fig_owner, use_container_width=True)
+            
+            # Calculate maintenance insights
+            insights = add_maintenance_insights(processed_data)
+            
+            # Overall Maintenance Summary
+            st.write("#### Maintenance Overview")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric(
+                    "Vehicles Needing Service",
+                    f"{insights['maintenance_quality']['poor']:.1f}%",
+                    delta=None
+                )
+            with col2:
+                st.metric(
+                    "Well-Maintained Vehicles",
+                    f"{insights['maintenance_quality']['good']:.1f}%",
+                    delta=None
+                )
+            with col3:
+                st.metric(
+                    "Components Needing Attention",
+                    f"{max(insights['component_health'].values()):.1f}%",
+                    delta=None
+                )
+            
+            # Detailed insights in expander
+            with st.expander("View Detailed Maintenance Insights"):
+                st.markdown("""
+                #### Component Health Indicators
+                """)
+                
+                for component, value in insights['component_health'].items():
+                    st.write(f"- {component.replace('_', ' ').title()}: {value:.1f}%")
+                
+                st.markdown("""
+                #### Maintenance Categories
+                """)
+                
+                for category, descriptions in maintenance_categories.items():
+                    st.write(f"**{category.replace('_', ' ')}**")
+                    for status, desc in descriptions.items():
+                        st.write(f"- {status}: {desc}")
 
     # Bivariate Analysis Tab
     with tab2:
