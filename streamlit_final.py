@@ -2092,6 +2092,105 @@ def show_eda():
             
             # 3. Safety Features
             with sections[2]:
+                # Create a list of safety feature columns with their display names
+                safety_features = {
+                    'airbags': 'Airbags Present',
+                    'is_esc': 'Electronic Stability Control',
+                    'is_adjustable_steering': 'Adjustable Steering',
+                    'is_tpms': 'Tire Pressure Monitoring',
+                    'is_parking_sensors': 'Parking Sensors',
+                    'is_parking_camera': 'Parking Camera'
+                }
+                
+                # Calculate claim rates for each safety feature
+                claim_rates_data = []
+                
+                for feature, display_name in safety_features.items():
+                    # Calculate crosstab with absolute numbers
+                    cross_tab = pd.crosstab(
+                        balanced_data_cleaned[feature],
+                        balanced_data_cleaned['CLAIM_FLAG']
+                    )
+                    
+                    # Calculate percentages
+                    percentages = (cross_tab.div(cross_tab.sum(axis=1), axis=0) * 100).round(1)
+                    
+                    # Store the claim rate (percentage of claims) for each feature value
+                    if 1 in percentages.columns:  # If there are claims
+                        claim_rates_data.append({
+                            'Feature': display_name,
+                            'No_Feature_Claim_Rate': percentages.loc[0, 1] if 0 in percentages.index else 0,
+                            'With_Feature_Claim_Rate': percentages.loc[1, 1] if 1 in percentages.index else 0
+                        })
+                
+                # Convert to DataFrame
+                claim_rates_df = pd.DataFrame(claim_rates_data)
+                
+                # Create heatmap
+                fig_safety = go.Figure()
+                
+                # Add heatmap trace
+                fig_safety.add_trace(go.Heatmap(
+                    z=np.array([claim_rates_df['No_Feature_Claim_Rate'], 
+                               claim_rates_df['With_Feature_Claim_Rate']]).T,
+                    x=['Without Feature', 'With Feature'],
+                    y=claim_rates_df['Feature'],
+                    colorscale='RdYlBu_r',  # Reversed scale: Red (high claims) to Blue (low claims)
+                    text=np.array([claim_rates_df['No_Feature_Claim_Rate'], 
+                                 claim_rates_df['With_Feature_Claim_Rate']]).T,
+                    texttemplate='%{text:.1f}%',
+                    textfont={"size": 12},
+                    showscale=True,
+                    colorbar=dict(title='Claim Rate (%)')
+                ))
+                
+                # Update layout
+                fig_safety.update_layout(
+                    title="Claim Rates by Safety Feature",
+                    xaxis_title="Feature Status",
+                    yaxis_title="Safety Feature",
+                    height=500,
+                    yaxis={'autorange': 'reversed'}  # To match the original order
+                )
+                
+                st.plotly_chart(fig_safety, use_container_width=True)
+                
+                # Add feature impact analysis
+                st.write("#### Safety Feature Impact Analysis")
+                
+                # Calculate and display the impact of each feature
+                impact_data = []
+                for idx, row in claim_rates_df.iterrows():
+                    impact = row['No_Feature_Claim_Rate'] - row['With_Feature_Claim_Rate']
+                    impact_data.append({
+                        'Feature': row['Feature'],
+                        'Impact': impact,
+                        'Effectiveness': 'Positive' if impact > 0 else 'Negative' if impact < 0 else 'Neutral'
+                    })
+                
+                impact_df = pd.DataFrame(impact_data)
+                impact_df = impact_df.sort_values('Impact', ascending=False)
+                
+                # Display impact analysis
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("Feature Effectiveness (% Reduction in Claims):")
+                    for _, row in impact_df.iterrows():
+                        if row['Impact'] != 0:
+                            color = "green" if row['Impact'] > 0 else "red"
+                            st.markdown(f"- **{row['Feature']}**: "
+                                      f"<span style='color:{color}'>{abs(row['Impact']):.1f}% "
+                                      f"{'reduction' if row['Impact'] > 0 else 'increase'}</span>",
+                                      unsafe_allow_html=True)
+                
+                with col2:
+                    st.write("Key Insights:")
+                    st.markdown("""
+                    - Features showing claim reduction are more effective
+                    - Red indicates potential correlation with higher claim rates
+                    - Consider combinations of features for optimal safety
+                    """)
                 # Create a list of safety feature columns
                 safety_features = [
                     'airbags', 'is_esc', 'is_adjustable_steering',
