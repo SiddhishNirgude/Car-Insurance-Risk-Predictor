@@ -1232,10 +1232,269 @@ def show_eda():
             - Dimensional Analysis shows the physical characteristics distribution
             - Fuel Type Distribution indicates the prevalence of different fuel technologies
             """)
-            
+
+def process_risk_indicators(df):
+    """
+    Process risk indicator columns to map encoded values back to meaningful categories.
+    
+    Args:
+        df: DataFrame containing the risk indicator columns
+    
+    Returns:
+        DataFrame with processed risk indicators
+    """
+    df_processed = df.copy()
+    
+    # 1. REVOKED mapping (0/1 to No/Yes)
+    df_processed['REVOKED_CAT'] = df_processed['REVOKED'].map({
+        0: 'Not Revoked',
+        1: 'Revoked'
+    })
+    
+    # 2. CAR_USE mapping (0/1 to Private/Commercial)
+    df_processed['CAR_USE_CAT'] = df_processed['CAR_USE'].map({
+        0: 'Private',
+        1: 'Commercial'
+    })
+    
+    # 3. URBANICITY mapping (0/1 to Low/High)
+    df_processed['URBANICITY_CAT'] = df_processed['URBANICITY'].map({
+        0: 'Low Urbanicity',
+        1: 'High Urbanicity'
+    })
+    
+# 4. Accident_History mapping (float ranges to severity categories)
+def map_accident_history(value):
+        if value <= 1:
+            return 'No Accidents'
+        elif value <= 2:
+            return 'Minor Accidents'
+        elif value <= 3:
+            return 'Moderate Accidents'
+        else:
+            return 'Severe Accidents'
+    
+    df_processed['ACCIDENT_HISTORY_CAT'] = df_processed['Accident_History'].apply(map_accident_history)
+    
+    # Create a color mapping dictionary for accident history categories
+    accident_colors = {
+        'No Accidents': 'green',
+        'Minor Accidents': 'yellow',
+        'Moderate Accidents': 'orange',
+        'Severe Accidents': 'red'
+    }
+    
+    return df_processed, accident_colors
+
+def get_risk_category_descriptions():
+    """
+    Returns descriptions for each risk category for documentation purposes.
+    """
+    return {
+        'REVOKED': {
+            'Not Revoked': 'Driver license has never been revoked',
+            'Revoked': 'Driver license has been revoked in the past'
+        },
+        'CAR_USE': {
+            'Private': 'Vehicle used for personal/family purposes',
+            'Commercial': 'Vehicle used for business/commercial purposes'
+        },
+        'URBANICITY': {
+            'Low Urbanicity': 'Rural or less densely populated area',
+            'High Urbanicity': 'Urban or densely populated area'
+        },
+        'ACCIDENT_HISTORY': {
+            'No Accidents': 'No significant accident history (Score ≤ 1)',
+            'Minor Accidents': 'Minor accidents or incidents (1 < Score ≤ 2)',
+            'Moderate Accidents': 'Moderate accident history (2 < Score ≤ 3)',
+            'Severe Accidents': 'Severe or frequent accidents (Score > 3)'
+        }
+    }
+
+
         with uni_tab3:
             st.subheader("Risk Indicators Analysis")
-            st.write("Risk analysis coming soon")
+            
+            # Process the data with our new mappings
+            processed_data, accident_colors = process_risk_indicators(balanced_data_cleaned)
+            
+            # Define risk-related columns
+            risk_numeric = [
+                'CLM_FREQ',   # Claim frequency
+                'MVR_PTS',    # Motor vehicle record points
+                'CLM_AMT',    # Claim amount
+                'OLDCLAIM',   # Past claim amount
+                'TIF'         # Time in force (policy duration)
+            ]
+            
+            # Create two columns for layout
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                st.write("#### Claims and Violations Metrics")
+                # Variable selector for numeric risk indicators
+                selected_numeric = st.selectbox(
+                    "Select Risk Metric",
+                    risk_numeric,
+                    format_func=lambda x: {
+                        'CLM_FREQ': 'Claim Frequency',
+                        'MVR_PTS': 'Motor Vehicle Points',
+                        'CLM_AMT': 'Claim Amount',
+                        'OLDCLAIM': 'Previous Claim Amount',
+                        'TIF': 'Policy Duration'
+                    }[x],
+                    key="risk_numeric"
+                )
+                
+                # Plot type selector
+                plot_type = st.radio(
+                    "Select Plot Type",
+                    ["Histogram", "Box Plot"],
+                    key="risk_plot_type"
+                )
+                
+                # Create figure based on selection
+                fig = go.Figure()
+                
+                if plot_type == "Histogram":
+                    # Add histogram
+                    fig.add_trace(go.Histogram(
+                        x=processed_data[selected_numeric],
+                        name="Distribution",
+                        nbinsx=st.slider("Number of Bins", 10, 100, 50, key="risk_bins")
+                    ))
+                    
+                else:  # Box Plot
+                    fig.add_trace(go.Box(
+                        y=processed_data[selected_numeric],
+                        name=selected_numeric,
+                        boxpoints='outliers'
+                    ))
+                
+                # Update layout
+                fig.update_layout(
+                    title=f"{selected_numeric} Distribution",
+                    xaxis_title=selected_numeric,
+                    yaxis_title="Frequency" if plot_type == "Histogram" else "Value",
+                    showlegend=False,
+                    height=400
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display summary statistics
+                st.write("#### Summary Statistics")
+                summary_stats = processed_data[selected_numeric].describe().round(2)
+                st.dataframe(summary_stats)
+            
+            with col2:
+                st.write("#### Risk Categories Distribution")
+                
+                # Create tabs for different categorical analyses
+                cat_tab1, cat_tab2 = st.tabs(["License & Usage", "Location & Accidents"])
+                
+                with cat_tab1:
+                    # License Revocation Status with updated categories
+                    revoked_dist = processed_data['REVOKED_CAT'].value_counts()
+                    fig_revoked = go.Figure(data=[
+                        go.Pie(
+                            labels=revoked_dist.index,
+                            values=revoked_dist.values,
+                            hole=0.3,
+                            textinfo='percent+label',
+                            marker_colors=['#2ecc71', '#e74c3c']  # Green for Not Revoked, Red for Revoked
+                        )
+                    ])
+                    fig_revoked.update_layout(
+                        title="License Revocation Status",
+                        height=300
+                    )
+                    st.plotly_chart(fig_revoked, use_container_width=True)
+                    
+                    # Car Usage Analysis with updated categories
+                    car_use_dist = processed_data['CAR_USE_CAT'].value_counts()
+                    fig_use = go.Figure(data=[
+                        go.Bar(
+                            x=car_use_dist.index,
+                            y=car_use_dist.values,
+                            text=car_use_dist.values,
+                            textposition='auto',
+                            marker_color=['#3498db', '#f1c40f']  # Blue for Private, Yellow for Commercial
+                        )
+                    ])
+                    fig_use.update_layout(
+                        title="Vehicle Usage Distribution",
+                        xaxis_title="Usage Type",
+                        yaxis_title="Count",
+                        height=300
+                    )
+                    st.plotly_chart(fig_use, use_container_width=True)
+                
+                with cat_tab2:
+                    # Urbanicity Analysis with updated categories
+                    urban_dist = processed_data['URBANICITY_CAT'].value_counts()
+                    fig_urban = go.Figure(data=[
+                        go.Pie(
+                            labels=urban_dist.index,
+                            values=urban_dist.values,
+                            hole=0.3,
+                            textinfo='percent+label',
+                            marker_colors=['#95a5a6', '#34495e']  # Light gray for Low, Dark gray for High
+                        )
+                    ])
+                    fig_urban.update_layout(
+                        title="Urbanicity Distribution",
+                        height=300
+                    )
+                    st.plotly_chart(fig_urban, use_container_width=True)
+                    
+                    # Accident History Analysis with updated categories
+                    accident_dist = processed_data['ACCIDENT_HISTORY_CAT'].value_counts()
+                    colors = [accident_colors[cat] for cat in accident_dist.index]
+                    fig_accident = go.Figure(data=[
+                        go.Bar(
+                            x=accident_dist.index,
+                            y=accident_dist.values,
+                            text=accident_dist.values,
+                            textposition='auto',
+                            marker_color=colors
+                        )
+                    ])
+                    fig_accident.update_layout(
+                        title="Accident History Distribution",
+                        xaxis_title="Accident History Category",
+                        yaxis_title="Count",
+                        height=300,
+                        xaxis_tickangle=-45
+                    )
+                    st.plotly_chart(fig_accident, use_container_width=True)
+            
+            # Risk Category Descriptions
+            st.write("#### Risk Category Descriptions")
+            descriptions = get_risk_category_descriptions()
+            
+            # Display descriptions in an expandable section
+            with st.expander("Click to view category descriptions"):
+                for category, desc in descriptions.items():
+                    st.write(f"**{category}**")
+                    for subcategory, explanation in desc.items():
+                        st.write(f"- {subcategory}: {explanation}")
+            
+            # Key Risk Insights based on actual data
+            st.write("#### Key Risk Insights")
+            
+            # Calculate some key metrics for insights
+            claim_freq_mean = processed_data['CLM_FREQ'].mean()
+            high_risk_drivers = (processed_data['MVR_PTS'] > 6).sum() / len(processed_data) * 100
+            commercial_pct = (processed_data['CAR_USE'] == 1).sum() / len(processed_data) * 100
+            
+            st.markdown(f"""
+            - **Claims Pattern**: Average claim frequency is {claim_freq_mean:.2f} claims per policy
+            - **High-Risk Drivers**: {high_risk_drivers:.1f}% of drivers have significant motor vehicle points (>6)
+            - **Vehicle Usage**: {commercial_pct:.1f}% of vehicles are used for commercial purposes
+            - **Geographic Distribution**: See urbanicity chart for urban/rural split
+            - **Accident Severity**: Distribution shown in accident history chart above
+            """)
             
         with uni_tab4:
             st.subheader("Maintenance Metrics Analysis")
