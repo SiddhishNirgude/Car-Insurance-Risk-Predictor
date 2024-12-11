@@ -2852,17 +2852,183 @@ def show_eda():
                     st.write(insight)
         
 
-# Multivariate Analysis - Correlation Analysis
 
+        # Multiple Line Slopes Analysis
         with multi_tab2:
-            st.subheader("Dimensionality Reduction")
-            # Placeholder for dimensionality reduction
-            st.write("PCA analysis coming soon")
+            st.subheader("Multiple Line Slopes Analysis")
             
+            # Variable selection
+            numeric_cols = balanced_data.select_dtypes(include=['float64', 'int64']).columns
+            
+            # Select variables
+            col1, col2 = st.columns(2)
+            with col1:
+                x_var = st.selectbox("Select X Variable", numeric_cols, index=0, key='x_var_slopes')
+            with col2:
+                y_vars = st.multiselect("Select Y Variables (max 3)", numeric_cols, default=[numeric_cols[1]], key='y_vars_slopes')
+            
+            # Limit to 3 Y variables for clarity
+            y_vars = y_vars[:3]
+            
+            if x_var and y_vars:
+                # Create figure
+                fig = go.Figure()
+                
+                # Color palette
+                colors = ['blue', 'red', 'green']
+                
+                # Plot each Y variable
+                for idx, y_var in enumerate(y_vars):
+                    # Get data
+                    x = balanced_data[x_var]
+                    y = balanced_data[y_var]
+                    
+                    # Fit line
+                    slope, intercept = np.polyfit(x, y, 1)
+                    line_x = np.array([x.min(), x.max()])
+                    line_y = slope * line_x + intercept
+                    
+                    # Calculate R²
+                    y_pred = slope * x + intercept
+                    r2 = 1 - (np.sum((y - y_pred) ** 2) / np.sum((y - y.mean()) ** 2))
+                    
+                    # Add scatter plot
+                    fig.add_trace(go.Scatter(
+                        x=x, y=y,
+                        mode='markers',
+                        name=f'{y_var} (data)',
+                        marker=dict(color=colors[idx], size=5, opacity=0.5),
+                        showlegend=True
+                    ))
+                    
+                    # Add regression line
+                    fig.add_trace(go.Scatter(
+                        x=line_x, y=line_y,
+                        mode='lines',
+                        name=f'{y_var} (slope={slope:.3f}, R²={r2:.3f})',
+                        line=dict(color=colors[idx], width=2),
+                        showlegend=True
+                    ))
+                
+                # Update layout
+                fig.update_layout(
+                    title=f"Multiple Line Slopes Analysis",
+                    xaxis_title=x_var,
+                    yaxis_title="Values",
+                    height=600
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display slope comparisons
+                st.subheader("Slope Comparisons")
+                
+                slope_data = []
+                for y_var in y_vars:
+                    slope, intercept = np.polyfit(balanced_data[x_var], balanced_data[y_var], 1)
+                    y_pred = slope * balanced_data[x_var] + intercept
+                    r2 = 1 - (np.sum((balanced_data[y_var] - y_pred) ** 2) / 
+                             np.sum((balanced_data[y_var] - balanced_data[y_var].mean()) ** 2))
+                    
+                    slope_data.append({
+                        'Variable': y_var,
+                        'Slope': slope,
+                        'R²': r2,
+                        'Strength': 'Strong' if abs(slope) > 0.5 else 'Moderate' if abs(slope) > 0.1 else 'Weak',
+                        'Direction': 'Positive' if slope > 0 else 'Negative'
+                    })
+                
+                # Display as table
+                st.dataframe(pd.DataFrame(slope_data))
+
+        # Relationship Strength Visualization
         with multi_tab3:
-            st.subheader("Pattern Discovery")
-            # Placeholder for pattern discovery
-            st.write("Pattern analysis coming soon")
+            st.subheader("Relationship Strength Analysis")
+            
+            # Select target variable
+            target_var = st.selectbox("Select Target Variable", 
+                                    ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim'],
+                                    key='target_strength')
+            
+            # Select features for analysis
+            features = st.multiselect("Select Features for Analysis",
+                                    numeric_cols,
+                                    default=list(numeric_cols[:5]),
+                                    key='features_strength')
+            
+            if features:
+                # Calculate correlations and slopes
+                strength_data = []
+                
+                for feature in features:
+                    # Calculate correlation
+                    corr = balanced_data[feature].corr(balanced_data[target_var])
+                    
+                    # Calculate slope
+                    slope, _ = np.polyfit(balanced_data[feature], balanced_data[target_var], 1)
+                    
+                    # Calculate statistical significance (t-test)
+                    t_stat, p_value = stats.pearsonr(balanced_data[feature], balanced_data[target_var])
+                    
+                    strength_data.append({
+                        'Feature': feature,
+                        'Correlation': corr,
+                        'Slope': slope,
+                        'P-value': p_value,
+                        'Significance': 'Significant' if p_value < 0.05 else 'Not Significant'
+                    })
+                
+                # Create DataFrame
+                strength_df = pd.DataFrame(strength_data)
+                
+                # Create heatmap of relationships
+                fig = go.Figure(data=go.Heatmap(
+                    z=strength_df[['Correlation']].values,
+                    x=['Correlation'],
+                    y=strength_df['Feature'],
+                    colorscale='RdBu',
+                    zmin=-1,
+                    zmax=1,
+                    text=np.round(strength_df[['Correlation']].values, 3),
+                    texttemplate='%{text}',
+                    textfont={"size": 10},
+                ))
+                
+                fig.update_layout(
+                    title=f"Relationship Strength with {target_var}",
+                    height=400 + len(features) * 20
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display detailed statistics
+                st.subheader("Detailed Statistics")
+                
+                # Format DataFrame for display
+                display_df = strength_df.round(3)
+                display_df = display_df.sort_values('Abs_Correlation', 
+                                                  ascending=False, 
+                                                  key=lambda x: abs(x))
+                
+                st.dataframe(display_df)
+                
+                # Key findings
+                st.subheader("Key Findings")
+                
+                # Strongest relationships
+                strongest = display_df.iloc[0]
+                st.write(f"- Strongest relationship: {strongest['Feature']} "
+                        f"(correlation: {strongest['Correlation']:.3f})")
+                
+                # Significant relationships
+                sig_features = display_df[display_df['P-value'] < 0.05]['Feature'].tolist()
+                st.write(f"- Number of significant relationships: {len(sig_features)}")
+                
+                # Direction of relationships
+                pos_count = (display_df['Correlation'] > 0).sum()
+                neg_count = (display_df['Correlation'] < 0).sum()
+                st.write(f"- Positive relationships: {pos_count}")
+                st.write(f"- Negative relationships: {neg_count}")
 
 
 
