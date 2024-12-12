@@ -3548,7 +3548,6 @@ def show_dimensionality_reduction():
 def show_model_development():
     st.title("Model Development and Evaluation")
     
-    # Create tabs for different modeling aspects
     model_tab1, model_tab2, model_tab3 = st.tabs([
         "Model Training",
         "Model Evaluation",
@@ -3562,53 +3561,70 @@ def show_model_development():
         'is_claim': 'Insurance Claims'
     }
     
-    # Model configurations
+    # Enhanced model configurations with regularization
     models = {
-        'Logistic Regression': LogisticRegression(random_state=42),
-        'Random Forest': RandomForestClassifier(random_state=42, n_estimators=100),
-        'XGBoost': XGBClassifier(random_state=42)
+        'Logistic Regression': LogisticRegression(
+            random_state=42, 
+            class_weight='balanced',
+            max_iter=1000
+        ),
+        'Random Forest': RandomForestClassifier(
+            random_state=42,
+            n_estimators=100,
+            class_weight='balanced',
+            max_depth=10
+        ),
+        'XGBoost': XGBClassifier(
+            random_state=42,
+            scale_pos_weight=1,
+            max_depth=6
+        )
     }
     
     with model_tab1:
         st.header("Model Training")
         
-        # Select target variable
         target = st.selectbox(
             "Select Target Variable",
             list(target_vars.keys()),
             format_func=lambda x: target_vars[x]
         )
         
-        # Select features based on PCA insights
+        # Updated feature selection without data leakage
         if target == 'CLAIM_FLAG':
             selected_features = [
-                'CLM_AMT', 'HOME_VAL', 'OLDCLAIM', 'MVR_PTS',
-                'INCOME', 'AGE', 'YOJ', 'CLM_FREQ'
+                'HOME_VAL', 'MVR_PTS', 'INCOME', 'AGE', 'YOJ',
+                'URBANICITY', 'CAR_AGE', 'TIF', 'PARENT1',
+                'MSTATUS', 'GENDER', 'max_power', 'max_torque',
+                'Engine_Size', 'Mileage'
             ]
         elif target == 'Need_Maintenance':
             selected_features = [
-                'Service_History', 'Vehicle_Age', 'Odometer_Reading',
-                'Tire_Condition_Code', 'Brake_Condition_Code',
-                'Battery_Status_Code', 'Reported_Issues'
+                'Vehicle_Age', 'Odometer_Reading',
+                'Service_History', 'max_power', 'max_torque',
+                'Engine_Size', 'Mileage', 'CAR_AGE',
+                'displacement', 'cylinder'
             ]
         else:
             selected_features = [
-                'CLM_FREQ', 'MVR_PTS', 'OLDCLAIM', 'CAR_AGE',
-                'URBANICITY', 'TIF', 'INCOME'
+                'MVR_PTS', 'CAR_AGE', 'URBANICITY', 'TIF', 'INCOME',
+                'AGE', 'YOJ', 'HOME_VAL', 'Vehicle_Age',
+                'Odometer_Reading', 'Service_History'
             ]
         
-        # Filter valid features
+        # Filter valid features and scale numeric features
         valid_features = [f for f in selected_features if f in balanced_data.columns]
-        
-        # Prepare data
         X = balanced_data[valid_features]
         y = balanced_data[target]
         
-        # Train-test split
-        test_size = st.slider("Test Set Size", 0.1, 0.4, 0.2, 0.05)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42
-        )
+        # Add feature scaling
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        X_scaled = pd.DataFrame(X_scaled, columns=valid_features)
+        
+        # Implement stratified k-fold cross-validation
+        n_splits = st.slider("Number of Cross-validation Folds", 3, 10, 5)
+        cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         
         # Model selection
         selected_models = st.multiselect(
@@ -3618,42 +3634,52 @@ def show_model_development():
         )
         
         if st.button("Train Models"):
-            # Store results for comparison
             results = {}
             
             for model_name in selected_models:
-                # Create progress bar
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
-                # Train model
+                # Initialize cross-validation scores
+                cv_scores = {
+                    'accuracy': [], 'precision': [], 'recall': [],
+                    'f1': [], 'roc_auc': []
+                }
+                
                 model = models[model_name]
-                status_text.text(f"Training {model_name}...")
-                progress_bar.progress(25)
+                status_text.text(f"Training {model_name} with Cross-validation...")
                 
-                model.fit(X_train, y_train)
-                progress_bar.progress(50)
+                # Perform cross-validation
+                for fold, (train_idx, val_idx) in enumerate(cv.split(X_scaled, y)):
+                    X_train, X_val = X_scaled.iloc[train_idx], X_scaled.iloc[val_idx]
+                    y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
+                    
+                    model.fit(X_train, y_train)
+                    y_pred = model.predict(X_val)
+                    y_pred_proba = model.predict_proba(X_val)[:, 1]
+                    
+                    # Calculate metrics for this fold
+                    cv_scores['accuracy'].append(accuracy_score(y_val, y_pred))
+                    cv_scores['precision'].append(precision_score(y_val, y_pred))
+                    cv_scores['recall'].append(recall_score(y_val, y_pred))
+                    cv_scores['f1'].append(f1_score(y_val, y_pred))
+                    cv_scores['roc_auc'].append(roc_auc_score(y_val, y_pred_proba))
+                    
+                    progress_bar.progress((fold + 1) / n_splits)
                 
-                # Make predictions
-                y_pred = model.predict(X_test)
-                y_pred_proba = model.predict_proba(X_test)[:, 1]
-                progress_bar.progress(75)
-                
-                # Calculate metrics
+                # Store average results
                 results[model_name] = {
-                    'accuracy': accuracy_score(y_test, y_pred),
-                    'precision': precision_score(y_test, y_pred),
-                    'recall': recall_score(y_test, y_pred),
-                    'f1': f1_score(y_test, y_pred),
-                    'roc_auc': roc_auc_score(y_test, y_pred_proba),
-                    'predictions': y_pred,
-                    'probabilities': y_pred_proba,
+                    'accuracy': np.mean(cv_scores['accuracy']),
+                    'precision': np.mean(cv_scores['precision']),
+                    'recall': np.mean(cv_scores['recall']),
+                    'f1': np.mean(cv_scores['f1']),
+                    'roc_auc': np.mean(cv_scores['roc_auc']),
+                    'cv_scores': cv_scores,
                     'model': model
                 }
-                progress_bar.progress(100)
                 
             st.session_state['model_results'] = results
-            st.success("Models trained successfully!")
+            st.success("Models trained successfully with cross-validation!")
     
     with model_tab2:
         st.header("Model Evaluation")
