@@ -3548,6 +3548,7 @@ def show_dimensionality_reduction():
 def show_model_development():
     st.title("Model Development and Evaluation")
     
+    # Create tabs for different modeling aspects
     model_tab1, model_tab2, model_tab3 = st.tabs([
         "Model Training",
         "Model Evaluation",
@@ -3579,11 +3580,12 @@ def show_model_development():
             scale_pos_weight=1,
             max_depth=6
         )
-    }
-    
+
+        # Model Training Tab
     with model_tab1:
         st.header("Model Training")
         
+        # Select target variable
         target = st.selectbox(
             "Select Target Variable",
             list(target_vars.keys()),
@@ -3622,7 +3624,22 @@ def show_model_development():
         X_scaled = scaler.fit_transform(X)
         X_scaled = pd.DataFrame(X_scaled, columns=valid_features)
         
-        # Implement stratified k-fold cross-validation
+        # Test size selection
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            test_size = st.slider(
+                "Test Set Size (%)", 
+                min_value=10, 
+                max_value=40, 
+                value=20, 
+                step=5,
+                help="Percentage of data to use for testing"
+            )
+            test_size = test_size / 100
+        with col2:
+            st.write(f"Selected test size: {test_size*100}%")
+        
+        # Cross-validation settings
         n_splits = st.slider("Number of Cross-validation Folds", 3, 10, 5)
         cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         
@@ -3632,15 +3649,14 @@ def show_model_development():
             list(models.keys()),
             default=['Logistic Regression', 'Random Forest']
         )
-        
+        # Training button and logic
         if st.button("Train Models"):
             results = {}
             
-            # Create a final test set
+            # Create final train-test split for evaluation
             X_train, X_test, y_train, y_test = train_test_split(
-                X_scaled, y, test_size=0.2, random_state=42, stratify=y
+                X_scaled, y, test_size=test_size, random_state=42, stratify=y
             )
-            st.session_state['test_data'] = {'X_test': X_test, 'y_test': y_test}
             
             for model_name in selected_models:
                 progress_bar = st.progress(0)
@@ -3653,148 +3669,52 @@ def show_model_development():
                 }
                 
                 model = models[model_name]
+                status_text.text(f"Training {model_name} with Cross-validation...")
+                
+                # Perform cross-validation
+                for fold, (train_idx, val_idx) in enumerate(cv.split(X_scaled, y)):
+                    X_train_cv, X_val = X_scaled.iloc[train_idx], X_scaled.iloc[val_idx]
+                    y_train_cv, y_val = y.iloc[train_idx], y.iloc[val_idx]
+                    
+                    model.fit(X_train_cv, y_train_cv)
+                    y_pred = model.predict(X_val)
+                    y_pred_proba = model.predict_proba(X_val)[:, 1]
+                    
+                    # Calculate metrics for this fold
+                    cv_scores['accuracy'].append(accuracy_score(y_val, y_pred))
+                    cv_scores['precision'].append(precision_score(y_val, y_pred))
+                    cv_scores['recall'].append(recall_score(y_val, y_pred))
+                    cv_scores['f1'].append(f1_score(y_val, y_pred))
+                    cv_scores['roc_auc'].append(roc_auc_score(y_val, y_pred_proba))
+                    
+                    progress_bar.progress((fold + 1) / n_splits)
+                
+                # Final fit on full training data and evaluate on test set
                 model.fit(X_train, y_train)
-                y_pred = model.predict(X_test)
-                y_pred_proba = model.predict_proba(X_test)[:, 1]
+                final_pred = model.predict(X_test)
+                final_pred_proba = model.predict_proba(X_test)[:, 1]
                 
                 # Store results
                 results[model_name] = {
-                    'accuracy': np.mean(cv_scores['accuracy']),
-                    'precision': np.mean(cv_scores['precision']),
-                    'recall': np.mean(cv_scores['recall']),
-                    'f1': np.mean(cv_scores['f1']),
-                    'roc_auc': np.mean(cv_scores['roc_auc']),
                     'cv_scores': cv_scores,
                     'model': model,
-                    'predictions': y_pred,
-                    'probabilities': y_pred_proba
+                    'predictions': final_pred,
+                    'probabilities': final_pred_proba,
+                    'accuracy': accuracy_score(y_test, final_pred),
+                    'precision': precision_score(y_test, final_pred),
+                    'recall': recall_score(y_test, final_pred),
+                    'f1': f1_score(y_test, final_pred),
+                    'roc_auc': roc_auc_score(y_test, final_pred_proba)
                 }
             
+            # Store test data and results in session state
+            st.session_state['test_data'] = {
+                'X_test': X_test, 
+                'y_test': y_test,
+                'features': valid_features
+            }
             st.session_state['model_results'] = results
-            st.success("Models trained successfully with cross-validation!")
-
-    with model_tab2:
-        st.header("Model Evaluation")
-        
-        if 'model_results' in st.session_state and 'test_data' in st.session_state:
-            results = st.session_state['model_results']
-            y_test = st.session_state['test_data']['y_test']
-            
-            # Rest of evaluation code remains same
-            model_to_evaluate = st.selectbox(
-                "Select Model to Evaluate",
-                list(results.keys())
-            )
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Confusion Matrix
-                cm = confusion_matrix(y_test, results[model_to_evaluate]['predictions'])
-                fig_cm = px.imshow(
-                    cm,
-                    labels=dict(x="Predicted", y="Actual"),
-                    x=['Negative', 'Positive'],
-                    y=['Negative', 'Positive'],
-                    title="Confusion Matrix",
-                    color_continuous_scale="RdBu"
-                )
-                st.plotly_chart(fig_cm)
-                
-            with col2:
-                # ROC Curve
-                fpr, tpr, _ = roc_curve(y_test, results[model_to_evaluate]['probabilities'])
-                fig_roc = go.Figure()
-                fig_roc.add_trace(go.Scatter(
-                    x=fpr, y=tpr,
-                    name=f'ROC (AUC = {results[model_to_evaluate]["roc_auc"]:.3f})'
-                ))
-                fig_roc.add_trace(go.Scatter(
-                    x=[0, 1], y=[0, 1],
-                    line=dict(dash='dash'),
-                    name='Random'
-                ))
-                fig_roc.update_layout(
-                    title="ROC Curve",
-                    xaxis_title="False Positive Rate",
-                    yaxis_title="True Positive Rate"
-                )
-                st.plotly_chart(fig_roc)
-            
-            # Metrics table
-            metrics_df = pd.DataFrame({
-                'Metric': ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC'],
-                'Value': [
-                    results[model_to_evaluate]['accuracy'],
-                    results[model_to_evaluate]['precision'],
-                    results[model_to_evaluate]['recall'],
-                    results[model_to_evaluate]['f1'],
-                    results[model_to_evaluate]['roc_auc']
-                ]
-            })
-            st.table(metrics_df.round(3))
-            
-            # Feature importance
-            if model_to_evaluate in ['Random Forest', 'XGBoost']:
-                feature_imp = pd.DataFrame({
-                    'Feature': valid_features,
-                    'Importance': results[model_to_evaluate]['model'].feature_importances_
-                }).sort_values('Importance', ascending=False)
-                
-                fig_imp = px.bar(
-                    feature_imp,
-                    x='Importance',
-                    y='Feature',
-                    title="Feature Importance",
-                    orientation='h'
-                )
-                st.plotly_chart(fig_imp)
-    
-    with model_tab3:
-        st.header("Model Comparison")
-        
-        if 'model_results' in st.session_state:
-            results = st.session_state['model_results']
-            
-            # Prepare comparison dataframe
-            comparison_data = []
-            for model_name, metrics in results.items():
-                comparison_data.append({
-                    'Model': model_name,
-                    'Accuracy': metrics['accuracy'],
-                    'Precision': metrics['precision'],
-                    'Recall': metrics['recall'],
-                    'F1 Score': metrics['f1'],
-                    'ROC AUC': metrics['roc_auc']
-                })
-            
-            comparison_df = pd.DataFrame(comparison_data)
-            
-            # Plot comparison
-            fig_comparison = go.Figure()
-            metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC']
-            
-            for model in comparison_df['Model']:
-                fig_comparison.add_trace(go.Scatter(
-                    x=metrics,
-                    y=comparison_df[comparison_df['Model'] == model][metrics].values[0],
-                    name=model,
-                    mode='lines+markers'
-                ))
-            
-            fig_comparison.update_layout(
-                title="Model Performance Comparison",
-                xaxis_title="Metric",
-                yaxis_title="Score",
-                yaxis_range=[0, 1]
-            )
-            
-            st.plotly_chart(fig_comparison)
-            
-            # Detailed metrics table
-            st.write("Detailed Comparison")
-            st.table(comparison_df.round(3).set_index('Model'))
-
+            st.success("Models trained successfully with cross-validation!"
 
 # --- PRODUCTION SPACE PAGES ---
 def show_risk_assessment():
