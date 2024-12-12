@@ -3636,6 +3636,12 @@ def show_model_development():
         if st.button("Train Models"):
             results = {}
             
+            # Create a final test set
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_scaled, y, test_size=0.2, random_state=42, stratify=y
+            )
+            st.session_state['test_data'] = {'X_test': X_test, 'y_test': y_test}
+            
             for model_name in selected_models:
                 progress_bar = st.progress(0)
                 status_text = st.empty()
@@ -3647,27 +3653,11 @@ def show_model_development():
                 }
                 
                 model = models[model_name]
-                status_text.text(f"Training {model_name} with Cross-validation...")
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                y_pred_proba = model.predict_proba(X_test)[:, 1]
                 
-                # Perform cross-validation
-                for fold, (train_idx, val_idx) in enumerate(cv.split(X_scaled, y)):
-                    X_train, X_val = X_scaled.iloc[train_idx], X_scaled.iloc[val_idx]
-                    y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
-                    
-                    model.fit(X_train, y_train)
-                    y_pred = model.predict(X_val)
-                    y_pred_proba = model.predict_proba(X_val)[:, 1]
-                    
-                    # Calculate metrics for this fold
-                    cv_scores['accuracy'].append(accuracy_score(y_val, y_pred))
-                    cv_scores['precision'].append(precision_score(y_val, y_pred))
-                    cv_scores['recall'].append(recall_score(y_val, y_pred))
-                    cv_scores['f1'].append(f1_score(y_val, y_pred))
-                    cv_scores['roc_auc'].append(roc_auc_score(y_val, y_pred_proba))
-                    
-                    progress_bar.progress((fold + 1) / n_splits)
-                
-                # Store average results
+                # Store results
                 results[model_name] = {
                     'accuracy': np.mean(cv_scores['accuracy']),
                     'precision': np.mean(cv_scores['precision']),
@@ -3675,19 +3665,22 @@ def show_model_development():
                     'f1': np.mean(cv_scores['f1']),
                     'roc_auc': np.mean(cv_scores['roc_auc']),
                     'cv_scores': cv_scores,
-                    'model': model
+                    'model': model,
+                    'predictions': y_pred,
+                    'probabilities': y_pred_proba
                 }
-                
+            
             st.session_state['model_results'] = results
             st.success("Models trained successfully with cross-validation!")
-    
+
     with model_tab2:
         st.header("Model Evaluation")
         
-        if 'model_results' in st.session_state:
+        if 'model_results' in st.session_state and 'test_data' in st.session_state:
             results = st.session_state['model_results']
+            y_test = st.session_state['test_data']['y_test']
             
-            # Select model to evaluate
+            # Rest of evaluation code remains same
             model_to_evaluate = st.selectbox(
                 "Select Model to Evaluate",
                 list(results.keys())
