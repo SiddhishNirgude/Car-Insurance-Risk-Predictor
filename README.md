@@ -7,9 +7,6 @@ Machine Learning and Data Analytics<br/>
 <br/>
 By - Siddhish Nirgude</h2><br/>
 
-Project Banner
-Note: For optimal functionality, all files should be placed in a directory matching this repository's structure.
-Path adjustments may be necessary otherwise.
 This repository contains a comprehensive project exploring car insurance risk prediction using advanced machine learning models and data analytics.
 
 ---------------------------------
