@@ -3580,8 +3580,9 @@ def show_model_development():
             scale_pos_weight=1,
             max_depth=6
         )
+    }
 
-        # Model Training Tab
+    # Model Training Tab
     with model_tab1:
         st.header("Model Training")
         
@@ -3714,7 +3715,7 @@ def show_model_development():
                 'features': valid_features
             }
             st.session_state['model_results'] = results
-            st.success("Models trained successfully with cross-validation!"
+            st.success("Models trained successfully with cross-validation!")
 
 # --- PRODUCTION SPACE PAGES ---
 def show_risk_assessment():
