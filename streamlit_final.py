@@ -3582,9 +3582,141 @@ def show_model_development():
         )
     }
     
+
+    # Model Training Tab
     with model_tab1:
-        # [Previous Model Training Tab Code Remains the Same]
-        # ... (keep the entire existing code for model training tab)
+        st.header("Model Training")
+        
+        # Select target variable
+        target = st.selectbox(
+            "Select Target Variable",
+            list(target_vars.keys()),
+            format_func=lambda x: target_vars[x]
+        )
+        
+        # Updated feature selection without data leakage
+        if target == 'CLAIM_FLAG':
+            selected_features = [
+                'HOME_VAL', 'MVR_PTS', 'INCOME', 'AGE', 'YOJ',
+                'URBANICITY', 'CAR_AGE', 'TIF', 'PARENT1',
+                'MSTATUS', 'GENDER', 'max_power', 'max_torque',
+                'Engine_Size', 'Mileage'
+            ]
+        elif target == 'Need_Maintenance':
+            selected_features = [
+                'Vehicle_Age', 'Odometer_Reading',
+                'Service_History', 'max_power', 'max_torque',
+                'Engine_Size', 'Mileage', 'CAR_AGE',
+                'displacement', 'cylinder'
+            ]
+        else:
+            selected_features = [
+                'MVR_PTS', 'CAR_AGE', 'URBANICITY', 'TIF', 'INCOME',
+                'AGE', 'YOJ', 'HOME_VAL', 'Vehicle_Age',
+                'Odometer_Reading', 'Service_History'
+            ]
+        
+        # Filter valid features and scale numeric features
+        valid_features = [f for f in selected_features if f in balanced_data.columns]
+        X = balanced_data[valid_features]
+        y = balanced_data[target]
+        
+        # Add feature scaling
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        X_scaled = pd.DataFrame(X_scaled, columns=valid_features)
+        
+        # Test size selection
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            test_size = st.slider(
+                "Test Set Size (%)", 
+                min_value=10, 
+                max_value=40, 
+                value=20, 
+                step=5,
+                help="Percentage of data to use for testing"
+            )
+            test_size = test_size / 100
+        with col2:
+            st.write(f"Selected test size: {test_size*100}%")
+        
+        # Cross-validation settings
+        n_splits = st.slider("Number of Cross-validation Folds", 3, 10, 5)
+        cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+        
+        # Model selection
+        selected_models = st.multiselect(
+            "Select Models to Train",
+            list(models.keys()),
+            default=['Logistic Regression', 'Random Forest']
+        )
+        # Training button and logic
+        if st.button("Train Models"):
+            results = {}
+            
+            # Create final train-test split for evaluation
+            X_train, X_test, y_train, y_test = train_test_split(
+                X_scaled, y, test_size=test_size, random_state=42, stratify=y
+            )
+            
+            for model_name in selected_models:
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                # Initialize cross-validation scores
+                cv_scores = {
+                    'accuracy': [], 'precision': [], 'recall': [],
+                    'f1': [], 'roc_auc': []
+                }
+                
+                model = models[model_name]
+                status_text.text(f"Training {model_name} with Cross-validation...")
+                
+                # Perform cross-validation
+                for fold, (train_idx, val_idx) in enumerate(cv.split(X_scaled, y)):
+                    X_train_cv, X_val = X_scaled.iloc[train_idx], X_scaled.iloc[val_idx]
+                    y_train_cv, y_val = y.iloc[train_idx], y.iloc[val_idx]
+                    
+                    model.fit(X_train_cv, y_train_cv)
+                    y_pred = model.predict(X_val)
+                    y_pred_proba = model.predict_proba(X_val)[:, 1]
+                    
+                    # Calculate metrics for this fold
+                    cv_scores['accuracy'].append(accuracy_score(y_val, y_pred))
+                    cv_scores['precision'].append(precision_score(y_val, y_pred))
+                    cv_scores['recall'].append(recall_score(y_val, y_pred))
+                    cv_scores['f1'].append(f1_score(y_val, y_pred))
+                    cv_scores['roc_auc'].append(roc_auc_score(y_val, y_pred_proba))
+                    
+                    progress_bar.progress((fold + 1) / n_splits)
+                
+                # Final fit on full training data and evaluate on test set
+                model.fit(X_train, y_train)
+                final_pred = model.predict(X_test)
+                final_pred_proba = model.predict_proba(X_test)[:, 1]
+                
+                # Store results
+                results[model_name] = {
+                    'cv_scores': cv_scores,
+                    'model': model,
+                    'predictions': final_pred,
+                    'probabilities': final_pred_proba,
+                    'accuracy': accuracy_score(y_test, final_pred),
+                    'precision': precision_score(y_test, final_pred),
+                    'recall': recall_score(y_test, final_pred),
+                    'f1': f1_score(y_test, final_pred),
+                    'roc_auc': roc_auc_score(y_test, final_pred_proba)
+                }
+            
+            # Store test data and results in session state
+            st.session_state['test_data'] = {
+                'X_test': X_test, 
+                'y_test': y_test,
+                'features': valid_features
+            }
+            st.session_state['model_results'] = results
+            st.success("Models trained successfully with cross-validation!")
 
     with model_tab2:
         st.header("Model Evaluation")
