@@ -3445,6 +3445,96 @@ def show_dimensionality_reduction():
         - Feature selection strategies
         - Composite feature suggestions
         """)
+# Add detailed PCA insights at the end of the show_dimensionality_reduction function
+        st.header("Comprehensive PCA Analysis Conclusions")
+
+        # Insurance Claims Domain Insights
+        st.subheader("Insurance Claims Domain Insights")
+        st.markdown("""
+        #### Variance Explanation
+        - First principal component explains ~22% of variance
+        - Need approximately 6 components to explain 80% of total variance
+        - No single dominant factor in insurance claims data
+        
+        #### Feature Importance
+        - **PC1 Key Drivers:** HOME_VAL and OLDCLAIM showing strong influence
+        - **PC2 Influences:** YOJ (Years on Job) and INCOME are significant contributors
+        - **PC3 Impact:** HOMEKIDS shows strong influence on this component
+        
+        #### Dimensionality Recommendation
+        - Maintain 6-7 principal components for modeling
+        - Group related financial metrics for feature engineering
+        """)
+
+        # Vehicle Features Domain Insights
+        st.subheader("Vehicle Features Domain Insights")
+        st.markdown("""
+        #### Variance Explanation
+        - First PC explains approximately 60% of variance
+        - Only 3-4 components needed to explain 90% of variance
+        - Strong correlations evident between physical features
+        
+        #### Feature Patterns
+        - **Physical Dimensions Cluster:** gross_weight, height, length highly correlated
+        - **Technical Specifications:** Form distinct grouping in feature space
+        - **High Redundancy:** Significant opportunity for dimensionality reduction
+        
+        #### Dimensionality Recommendation
+        - Reduce to 3-4 principal components
+        - Combine correlated physical dimensions into composite features
+        """)
+
+        # Maintenance Data Domain Insights
+        st.subheader("Maintenance Data Domain Insights")
+        st.markdown("""
+        #### Variance Explanation
+        - More uniform variance distribution (~12% per component)
+        - Requires 8 components for 80% variance explanation
+        - Features show relative independence
+        
+        #### Feature Clusters
+        - **History Metrics:** Service_History and Maintenance_History_Code cluster together
+        - **Condition Metrics:** Tire, Brake, and Battery conditions form distinct group
+        - **Independent Factors:** More components needed due to feature independence
+        
+        #### Dimensionality Recommendation
+        - Maintain 8-9 components for comprehensive coverage
+        - Create separate indices for:
+            * Maintenance history metrics
+            * Component condition indicators
+        """)
+
+        # Final Recommendations
+        st.subheader("Overall Recommendations for Modeling")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            #### Feature Engineering Strategies
+            1. **Insurance Domain:**
+               - Create composite financial risk score
+               - Group demographic factors
+               - Combine claim history metrics
+            
+            2. **Vehicle Domain:**
+               - Develop single dimension index
+               - Create technical specification score
+               - Combine safety features index
+            """)
+        
+        with col2:
+            st.markdown("""
+            #### Implementation Approach
+            1. **Maintenance Domain:**
+               - Separate history and condition scores
+               - Create component health index
+               - Develop maintenance priority score
+            
+            2. **Cross-Domain:**
+               - Consider interaction between domains
+               - Create risk-weighted composite scores
+               - Maintain domain-specific components
+            """)
 
 # --- PRODUCTION SPACE PAGES ---
 def show_risk_assessment():
