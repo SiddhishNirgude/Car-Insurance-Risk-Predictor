@@ -3873,8 +3873,137 @@ def show_model_development():
 
 # --- PRODUCTION SPACE PAGES ---
 def show_risk_assessment():
-    st.title("Risk Assessment")
-    st.write("Risk assessment tools coming soon!")
+    st.title("Insurance Risk Assessment Tool")
+    
+    # Load the saved Random Forest model
+    if 'model_results' in st.session_state and 'Random Forest' in st.session_state['model_results']:
+        rf_model = st.session_state['model_results']['Random Forest']['model']
+        
+        st.write("Enter customer and vehicle information to assess insurance risk.")
+        
+        # Create two columns for input fields
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("Customer Information")
+            age = st.number_input("Age", min_value=18, max_value=100, value=30)
+            income = st.number_input("Annual Income ($)", min_value=0, max_value=1000000, value=50000)
+            mvr_pts = st.number_input("Motor Vehicle Record Points", min_value=0, max_value=20, value=0)
+            urbanicity = st.selectbox("Area Type", ["Urban", "Suburban", "Rural"])
+            
+            # Convert urbanicity to numeric
+            urbanicity_map = {"Urban": 2, "Suburban": 1, "Rural": 0}
+            urbanicity_value = urbanicity_map[urbanicity]
+            
+            mstatus = st.radio("Marital Status", ["Single", "Married"])
+            mstatus_value = 1 if mstatus == "Married" else 0
+            
+            gender = st.radio("Gender", ["Male", "Female"])
+            gender_value = 1 if gender == "Male" else 0
+            
+        with col2:
+            st.subheader("Vehicle Information")
+            car_age = st.number_input("Vehicle Age (years)", min_value=0, max_value=30, value=5)
+            engine_size = st.number_input("Engine Size (cc)", min_value=500, max_value=8000, value=2000)
+            max_power = st.number_input("Maximum Power (bhp)", min_value=50, max_value=1000, value=150)
+            max_torque = st.number_input("Maximum Torque (Nm)", min_value=50, max_value=1000, value=200)
+            mileage = st.number_input("Mileage (kmpl)", min_value=5, max_value=50, value=15)
+        
+        if st.button("Assess Risk"):
+            # Create input array for prediction
+            input_data = np.array([
+                age, income, mvr_pts, urbanicity_value, car_age,
+                engine_size, max_power, max_torque, mileage,
+                mstatus_value, gender_value
+            ]).reshape(1, -1)
+            
+            # Make prediction
+            risk_prob = rf_model.predict_proba(input_data)[0][1]
+            risk_score = int(risk_prob * 100)
+            
+            # Display results
+            st.header("Risk Assessment Results")
+            
+            # Risk Score Gauge
+            fig_gauge = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = risk_score,
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                title = {'text': "Risk Score"},
+                gauge = {
+                    'axis': {'range': [0, 100]},
+                    'bar': {'color': "darkblue"},
+                    'steps': [
+                        {'range': [0, 30], 'color': "green"},
+                        {'range': [30, 70], 'color': "yellow"},
+                        {'range': [70, 100], 'color': "red"}
+                    ],
+                    'threshold': {
+                        'line': {'color': "red", 'width': 4},
+                        'thickness': 0.75,
+                        'value': risk_score
+                    }
+                }
+            ))
+            st.plotly_chart(fig_gauge)
+            
+            # Risk Category
+            if risk_score < 30:
+                risk_category = "Low Risk"
+                color = "green"
+            elif risk_score < 70:
+                risk_category = "Medium Risk"
+                color = "yellow"
+            else:
+                risk_category = "High Risk"
+                color = "red"
+                
+            st.markdown(f"### Risk Category: <span style='color:{color}'>{risk_category}</span>", unsafe_allow_html=True)
+            
+            # Recommendations
+            st.subheader("Recommendations")
+            recommendations = []
+            
+            if mvr_pts > 5:
+                recommendations.append("- Consider defensive driving courses to reduce MVR points")
+            if car_age > 10:
+                recommendations.append("- Vehicle age is high - consider comprehensive coverage")
+            if mileage < 10:
+                recommendations.append("- Consider fuel-efficient driving techniques")
+            if risk_score > 70:
+                recommendations.append("- Recommend additional safety features")
+                recommendations.append("- Regular vehicle maintenance advised")
+                
+            if recommendations:
+                for rec in recommendations:
+                    st.write(rec)
+            else:
+                st.write("- Maintain current good practices")
+            
+            # Feature Importance Chart
+            if hasattr(rf_model, 'feature_importances_'):
+                st.subheader("Risk Factor Analysis")
+                feature_names = [
+                    'Age', 'Income', 'MVR Points', 'Urbanicity', 'Car Age',
+                    'Engine Size', 'Max Power', 'Max Torque', 'Mileage',
+                    'Marital Status', 'Gender'
+                ]
+                importance_df = pd.DataFrame({
+                    'Feature': feature_names,
+                    'Importance': rf_model.feature_importances_
+                }).sort_values('Importance', ascending=True)
+                
+                fig_importance = px.bar(
+                    importance_df,
+                    x='Importance',
+                    y='Feature',
+                    orientation='h',
+                    title='Risk Factor Influence'
+                )
+                st.plotly_chart(fig_importance)
+    else:
+        st.error("Please train the Random Forest model in the Data Science Space first!")
+        st.write("Navigate to: Data Science Space → Model Development and Evaluation")
 
 def show_vehicle_comparison():
     st.title("Vehicle Comparison")
