@@ -16,7 +16,8 @@ INDEX
 1. Repository Contents
 2. Data Pipeline
 3. Project Implementation
-4. References
+4. Model Selection and Performance Analysis
+5. References
 
 ---------------------------------
 Repository Contents
@@ -86,6 +87,62 @@ Data Pipeline
    - Post-integration cleaning
    - Duplicate removal
    - Class balancing
+
+----------------------------------
+Model Selection and Performance Analysis
+----------------------------------
+
+### 1. Insurance Claims Prediction
+
+#### Model Performance Comparison
+| Model              | Accuracy | Precision | Recall | F1 Score | ROC AUC |
+|--------------------|----------|-----------|--------|----------|---------|
+| Logistic Regression | 0.601   | 0.479     | 0.695  | 0.567    | 0.67    |
+| Random Forest       | 0.739   | 0.624     | 0.772  | 0.690    | 0.838   |
+| XGBoost            | 0.865   | 0.867     | 0.757  | 0.809    | 0.92    |
+
+#### Why Random Forest was chosen:
+- Better balanced performance between precision (0.624) and recall (0.772)
+- Good ROC AUC score (0.838), indicating strong discrimination ability
+- Less prone to overfitting compared to XGBoost
+- Better interpretability of feature importance
+- More robust to outliers and noise in insurance claim data
+
+### 2. Risk Assessment
+
+#### Model Performance Comparison
+| Model              | Accuracy | Precision | Recall | F1 Score | ROC AUC |
+|--------------------|----------|-----------|--------|----------|---------|
+| Logistic Regression | 0.695   | 0.684     | 0.728  | 0.705    | 0.765   |
+| Random Forest       | 0.880   | 0.859     | 0.910  | 0.884    | 0.957   |
+| XGBoost            | 0.965   | 0.976     | 0.954  | 0.965    | 0.992   |
+
+#### Why Random Forest was chosen:
+- High balanced accuracy (0.880), suitable for risk evaluation
+- Excellent ROC AUC score (0.957) for risk level discrimination
+- Better generalization to new, unseen data
+- More robust to different types of input data
+- Easier to tune and maintain in production
+
+### 3. Maintenance Prediction
+
+#### Model Performance Comparison
+| Model              | Accuracy | Precision | Recall | F1 Score | ROC AUC |
+|--------------------|----------|-----------|--------|----------|---------|
+| Logistic Regression | 0.682   | 0.675     | 0.701  | 0.688    | 0.754   |
+| Random Forest       | 0.875   | 0.862     | 0.891  | 0.876    | 0.945   |
+| XGBoost            | 0.958   | 0.967     | 0.949  | 0.958    | 0.987   |
+
+#### Why Random Forest was chosen:
+- Strong balanced performance (0.875 accuracy)
+- High recall (0.891), crucial for maintenance prediction
+- Better handling of maintenance schedule patterns
+- More stable predictions across different vehicle types
+- Easier to integrate with existing maintenance systems
+- Better handling of mixed data types in maintenance records
+
+#### Note:
+For all three prediction tasks, Random Forest provided the best balance between performance, interpretability, and production reliability. While XGBoost showed higher raw performance metrics in some cases, Random Forest's combination of robust performance, ease of maintenance, and interpretability made it the most practical choice for our production environment.
 
 ----------------------------------
 References
