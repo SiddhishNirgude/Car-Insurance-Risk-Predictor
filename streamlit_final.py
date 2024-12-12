@@ -3548,196 +3548,233 @@ def show_dimensionality_reduction():
 def show_model_development():
     st.title("Model Development and Evaluation")
     
-    # Create top-level tabs for target variables
-    target_tab1, target_tab2, target_tab3 = st.tabs([
-        "Risk Assessment (CLAIM_FLAG)",
-        "Maintenance Prediction (Need_Maintenance)",
-        "Insurance Claims (is_claim)"
+    # Create tabs for different modeling aspects
+    model_tab1, model_tab2, model_tab3 = st.tabs([
+        "Model Training",
+        "Model Evaluation",
+        "Model Comparison"
     ])
-
-    # Define feature sets for each target
-    feature_sets = {
-        'CLAIM_FLAG': [
-            'CLM_AMT', 'HOME_VAL', 'OLDCLAIM', 'MVR_PTS',
-            'INCOME', 'AGE', 'YOJ', 'CLM_FREQ'
-        ],
-        'Need_Maintenance': [
-            'Service_History', 'Vehicle_Age', 'Odometer_Reading',
-            'Tire_Condition_Code', 'Brake_Condition_Code',
-            'Battery_Status_Code', 'Reported_Issues'
-        ],
-        'is_claim': [
-            'CLM_FREQ', 'MVR_PTS', 'OLDCLAIM', 'CAR_AGE',
-            'URBANICITY', 'TIF', 'INCOME'
-        ]
+    
+    # Define target variables
+    target_vars = {
+        'CLAIM_FLAG': 'Risk Assessment',
+        'Need_Maintenance': 'Maintenance Prediction',
+        'is_claim': 'Insurance Claims'
     }
-
-    def create_modeling_section(target_var, features):
-        # Create tabs for modeling workflow
-        train_tab, eval_tab, compare_tab = st.tabs([
-            "Model Training",
-            "Model Evaluation",
-            "Model Comparison"
-        ])
-
-        with train_tab:
-            st.header("Model Training")
-            
-            # Test size slider
-            test_size = st.slider(
-                "Test Set Size", 
-                0.1, 0.4, 0.2, 0.05,
-                key=f"{target_var}_test_size"
-            )
-
-            # Model selection
-            models = st.multiselect(
-                "Select Models to Train",
-                ["Logistic Regression", "Random Forest", "XGBoost"],
-                default=["Logistic Regression", "Random Forest"],
-                key=f"{target_var}_models"
-            )
-
-            # Filter valid features
-            valid_features = [f for f in features if f in balanced_data.columns]
-            
-            if st.button("Train Models", key=f"{target_var}_train"):
-                # Prepare data
-                X = balanced_data[valid_features]
-                y = balanced_data[target_var]
-                
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y, test_size=test_size, random_state=42
-                )
-
-                # Store results
-                results = {}
-                for model_name in models:
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    # Initialize model
-                    if model_name == "Logistic Regression":
-                        model = LogisticRegression(random_state=42)
-                    elif model_name == "Random Forest":
-                        model = RandomForestClassifier(random_state=42)
-                    else:
-                        model = XGBClassifier(random_state=42)
-                    
-                    # Train and evaluate
-                    status_text.text(f"Training {model_name}...")
-                    progress_bar.progress(25)
-                    
-                    model.fit(X_train, y_train)
-                    progress_bar.progress(50)
-                    
-                    y_pred = model.predict(X_test)
-                    y_pred_proba = model.predict_proba(X_test)[:, 1]
-                    progress_bar.progress(75)
-                    
-                    results[model_name] = {
-                        'model': model,
-                        'predictions': y_pred,
-                        'probabilities': y_pred_proba,
-                        'metrics': {
-                            'accuracy': accuracy_score(y_test, y_pred),
-                            'precision': precision_score(y_test, y_pred),
-                            'recall': recall_score(y_test, y_pred),
-                            'f1': f1_score(y_test, y_pred),
-                            'roc_auc': roc_auc_score(y_test, y_pred_proba)
-                        }
-                    }
-                    progress_bar.progress(100)
-
-                # Store in session state
-                st.session_state[f'{target_var}_results'] = results
-                st.success("Models trained successfully!")
-
-        with eval_tab:
-            st.header("Model Evaluation")
-            if f'{target_var}_results' in st.session_state:
-                results = st.session_state[f'{target_var}_results']
-                
-                model_to_evaluate = st.selectbox(
-                    "Select Model to Evaluate",
-                    list(results.keys()),
-                    key=f"{target_var}_eval_model"
-                )
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    # Confusion Matrix
-                    cm = confusion_matrix(y_test, results[model_to_evaluate]['predictions'])
-                    fig_cm = px.imshow(
-                        cm,
-                        labels=dict(x="Predicted", y="Actual"),
-                        x=['Negative', 'Positive'],
-                        y=['Negative', 'Positive'],
-                        title="Confusion Matrix",
-                        color_continuous_scale="RdBu"
-                    )
-                    st.plotly_chart(fig_cm)
-
-                with col2:
-                    # ROC Curve
-                    metrics = results[model_to_evaluate]['metrics']
-                    fpr, tpr, _ = roc_curve(y_test, results[model_to_evaluate]['probabilities'])
-                    fig_roc = go.Figure()
-                    fig_roc.add_trace(go.Scatter(
-                        x=fpr, y=tpr,
-                        name=f'ROC (AUC = {metrics["roc_auc"]:.3f})'
-                    ))
-                    fig_roc.update_layout(title="ROC Curve")
-                    st.plotly_chart(fig_roc)
-
-        with compare_tab:
-            st.header("Model Comparison")
-            if f'{target_var}_results' in st.session_state:
-                results = st.session_state[f'{target_var}_results']
-                
-                # Create comparison dataframe
-                comparison_data = []
-                for model_name, result in results.items():
-                    metrics = result['metrics']
-                    comparison_data.append({
-                        'Model': model_name,
-                        **metrics
-                    })
-                
-                comparison_df = pd.DataFrame(comparison_data)
-                
-                # Plot comparison
-                metrics_to_plot = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
-                fig = go.Figure()
-                
-                for model in comparison_df['Model']:
-                    fig.add_trace(go.Bar(
-                        name=model,
-                        x=metrics_to_plot,
-                        y=[comparison_df[comparison_df['Model'] == model][metric].iloc[0] 
-                           for metric in metrics_to_plot]
-                    ))
-                
-                fig.update_layout(
-                    title="Model Performance Comparison",
-                    barmode='group',
-                    yaxis_range=[0, 1]
-                )
-                st.plotly_chart(fig)
-                
-                # Display metrics table
-                st.write("Detailed Metrics")
-                st.dataframe(comparison_df.round(3))
-
-    # Create modeling sections for each target
-    with target_tab1:
-        create_modeling_section('CLAIM_FLAG', feature_sets['CLAIM_FLAG'])
     
-    with target_tab2:
-        create_modeling_section('Need_Maintenance', feature_sets['Need_Maintenance'])
+    # Model configurations
+    models = {
+        'Logistic Regression': LogisticRegression(random_state=42),
+        'Random Forest': RandomForestClassifier(random_state=42, n_estimators=100),
+        'XGBoost': XGBClassifier(random_state=42)
+    }
     
-    with target_tab3:
-        create_modeling_section('is_claim', feature_sets['is_claim'])
+    with model_tab1:
+        st.header("Model Training")
+        
+        # Select target variable
+        target = st.selectbox(
+            "Select Target Variable",
+            list(target_vars.keys()),
+            format_func=lambda x: target_vars[x]
+        )
+        
+        # Select features based on PCA insights
+        if target == 'CLAIM_FLAG':
+            selected_features = [
+                'CLM_AMT', 'HOME_VAL', 'OLDCLAIM', 'MVR_PTS',
+                'INCOME', 'AGE', 'YOJ', 'CLM_FREQ'
+            ]
+        elif target == 'Need_Maintenance':
+            selected_features = [
+                'Service_History', 'Vehicle_Age', 'Odometer_Reading',
+                'Tire_Condition_Code', 'Brake_Condition_Code',
+                'Battery_Status_Code', 'Reported_Issues'
+            ]
+        else:
+            selected_features = [
+                'CLM_FREQ', 'MVR_PTS', 'OLDCLAIM', 'CAR_AGE',
+                'URBANICITY', 'TIF', 'INCOME'
+            ]
+        
+        # Filter valid features
+        valid_features = [f for f in selected_features if f in balanced_data.columns]
+        
+        # Prepare data
+        X = balanced_data[valid_features]
+        y = balanced_data[target]
+        
+        # Train-test split
+        test_size = st.slider("Test Set Size", 0.1, 0.4, 0.2, 0.05)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=test_size, random_state=42
+        )
+        
+        # Model selection
+        selected_models = st.multiselect(
+            "Select Models to Train",
+            list(models.keys()),
+            default=['Logistic Regression', 'Random Forest']
+        )
+        
+        if st.button("Train Models"):
+            # Store results for comparison
+            results = {}
+            
+            for model_name in selected_models:
+                # Create progress bar
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                # Train model
+                model = models[model_name]
+                status_text.text(f"Training {model_name}...")
+                progress_bar.progress(25)
+                
+                model.fit(X_train, y_train)
+                progress_bar.progress(50)
+                
+                # Make predictions
+                y_pred = model.predict(X_test)
+                y_pred_proba = model.predict_proba(X_test)[:, 1]
+                progress_bar.progress(75)
+                
+                # Calculate metrics
+                results[model_name] = {
+                    'accuracy': accuracy_score(y_test, y_pred),
+                    'precision': precision_score(y_test, y_pred),
+                    'recall': recall_score(y_test, y_pred),
+                    'f1': f1_score(y_test, y_pred),
+                    'roc_auc': roc_auc_score(y_test, y_pred_proba),
+                    'predictions': y_pred,
+                    'probabilities': y_pred_proba,
+                    'model': model
+                }
+                progress_bar.progress(100)
+                
+            st.session_state['model_results'] = results
+            st.success("Models trained successfully!")
+    
+    with model_tab2:
+        st.header("Model Evaluation")
+        
+        if 'model_results' in st.session_state:
+            results = st.session_state['model_results']
+            
+            # Select model to evaluate
+            model_to_evaluate = st.selectbox(
+                "Select Model to Evaluate",
+                list(results.keys())
+            )
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Confusion Matrix
+                cm = confusion_matrix(y_test, results[model_to_evaluate]['predictions'])
+                fig_cm = px.imshow(
+                    cm,
+                    labels=dict(x="Predicted", y="Actual"),
+                    x=['Negative', 'Positive'],
+                    y=['Negative', 'Positive'],
+                    title="Confusion Matrix",
+                    color_continuous_scale="RdBu"
+                )
+                st.plotly_chart(fig_cm)
+                
+            with col2:
+                # ROC Curve
+                fpr, tpr, _ = roc_curve(y_test, results[model_to_evaluate]['probabilities'])
+                fig_roc = go.Figure()
+                fig_roc.add_trace(go.Scatter(
+                    x=fpr, y=tpr,
+                    name=f'ROC (AUC = {results[model_to_evaluate]["roc_auc"]:.3f})'
+                ))
+                fig_roc.add_trace(go.Scatter(
+                    x=[0, 1], y=[0, 1],
+                    line=dict(dash='dash'),
+                    name='Random'
+                ))
+                fig_roc.update_layout(
+                    title="ROC Curve",
+                    xaxis_title="False Positive Rate",
+                    yaxis_title="True Positive Rate"
+                )
+                st.plotly_chart(fig_roc)
+            
+            # Metrics table
+            metrics_df = pd.DataFrame({
+                'Metric': ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC'],
+                'Value': [
+                    results[model_to_evaluate]['accuracy'],
+                    results[model_to_evaluate]['precision'],
+                    results[model_to_evaluate]['recall'],
+                    results[model_to_evaluate]['f1'],
+                    results[model_to_evaluate]['roc_auc']
+                ]
+            })
+            st.table(metrics_df.round(3))
+            
+            # Feature importance
+            if model_to_evaluate in ['Random Forest', 'XGBoost']:
+                feature_imp = pd.DataFrame({
+                    'Feature': valid_features,
+                    'Importance': results[model_to_evaluate]['model'].feature_importances_
+                }).sort_values('Importance', ascending=False)
+                
+                fig_imp = px.bar(
+                    feature_imp,
+                    x='Importance',
+                    y='Feature',
+                    title="Feature Importance",
+                    orientation='h'
+                )
+                st.plotly_chart(fig_imp)
+    
+    with model_tab3:
+        st.header("Model Comparison")
+        
+        if 'model_results' in st.session_state:
+            results = st.session_state['model_results']
+            
+            # Prepare comparison dataframe
+            comparison_data = []
+            for model_name, metrics in results.items():
+                comparison_data.append({
+                    'Model': model_name,
+                    'Accuracy': metrics['accuracy'],
+                    'Precision': metrics['precision'],
+                    'Recall': metrics['recall'],
+                    'F1 Score': metrics['f1'],
+                    'ROC AUC': metrics['roc_auc']
+                })
+            
+            comparison_df = pd.DataFrame(comparison_data)
+            
+            # Plot comparison
+            fig_comparison = go.Figure()
+            metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC']
+            
+            for model in comparison_df['Model']:
+                fig_comparison.add_trace(go.Scatter(
+                    x=metrics,
+                    y=comparison_df[comparison_df['Model'] == model][metrics].values[0],
+                    name=model,
+                    mode='lines+markers'
+                ))
+            
+            fig_comparison.update_layout(
+                title="Model Performance Comparison",
+                xaxis_title="Metric",
+                yaxis_title="Score",
+                yaxis_range=[0, 1]
+            )
+            
+            st.plotly_chart(fig_comparison)
+            
+            # Detailed metrics table
+            st.write("Detailed Comparison")
+            st.table(comparison_df.round(3).set_index('Model'))
 
 
 # --- PRODUCTION SPACE PAGES ---
