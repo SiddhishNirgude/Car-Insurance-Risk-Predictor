@@ -1,13 +1,14 @@
-<h1 align="center">Michigan State University<br/>
-CMSE-830 Class Project<br/></h1>
+# Michigan State University  
+CMSE-830 Class Project  
 
-<h2 align="center"><br/>
-Car Insurance Risk Predictor using<br/>
-Machine Learning and Data Analytics<br/>
-<br/>
-By - Siddhish Nirgude</h2><br/>
+## Car Insurance Risk Predictor using  
+Machine Learning and Data Analytics  
+
+### By - Siddhish Nirgude  
 
 This repository contains a comprehensive project exploring car insurance risk prediction using advanced machine learning models and data analytics.
+
+![Car Insurance Image](https://github.com/SiddhishNirgude/Car-Insurance-Risk-Predictor/blob/main/images/Imageof-Auto-Insurance.jpg)
 
 ---------------------------------
 INDEX
