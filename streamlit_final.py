@@ -4006,16 +4006,272 @@ def show_risk_assessment():
         st.write("Navigate to: Data Science Space → Model Development and Evaluation")
 
 def show_vehicle_comparison():
-    st.title("Vehicle Comparison")
-    st.write("Vehicle comparison tools coming soon!")
+    st.title("Vehicle Comparison Tool")
+    
+    # Allow comparing multiple vehicles
+    num_vehicles = st.number_input("Number of vehicles to compare", min_value=2, max_value=5, value=2)
+    
+    vehicles = []
+    cols = st.columns(num_vehicles)
+    
+    for i, col in enumerate(cols):
+        with col:
+            st.subheader(f"Vehicle {i+1}")
+            vehicle = {
+                'engine_size': st.number_input(f"Engine Size (cc)", 500, 8000, 2000, key=f"eng_{i}"),
+                'max_power': st.number_input(f"Max Power (bhp)", 50, 1000, 150, key=f"pow_{i}"),
+                'max_torque': st.number_input(f"Max Torque (Nm)", 50, 1000, 200, key=f"torq_{i}"),
+                'mileage': st.number_input(f"Mileage (kmpl)", 5, 50, 15, key=f"mil_{i}"),
+                'car_age': st.number_input(f"Vehicle Age (years)", 0, 30, 5, key=f"age_{i}")
+            }
+            vehicles.append(vehicle)
+    
+    if st.button("Compare Vehicles"):
+        if 'model_results' in st.session_state and 'Random Forest' in st.session_state['model_results']:
+            rf_model = st.session_state['model_results']['Random Forest']['model']
+            
+            # Create comparison visualizations
+            comparison_data = pd.DataFrame(vehicles)
+            
+            # Radar Chart for Vehicle Specs
+            fig_radar = go.Figure()
+            for i, vehicle in enumerate(vehicles):
+                fig_radar.add_trace(go.Scatterpolar(
+                    r=[vehicle['engine_size']/80, vehicle['max_power'], 
+                       vehicle['max_torque']/10, vehicle['mileage']*2, 
+                       20-vehicle['car_age']],
+                    theta=['Engine Size', 'Power', 'Torque', 'Mileage', 'Age Score'],
+                    name=f'Vehicle {i+1}'
+                ))
+            
+            fig_radar.update_layout(title="Vehicle Specifications Comparison")
+            st.plotly_chart(fig_radar)
+            
+            # Predict risk and maintenance probability for each vehicle
+            results = []
+            for vehicle in vehicles:
+                # Dummy values for other required features
+                input_data = np.array([
+                    35, 50000, 0, 1, vehicle['car_age'],
+                    vehicle['engine_size'], vehicle['max_power'],
+                    vehicle['max_torque'], vehicle['mileage'], 1, 1
+                ]).reshape(1, -1)
+                
+                risk_prob = rf_model.predict_proba(input_data)[0][1]
+                results.append({
+                    'Risk Score': int(risk_prob * 100),
+                    'Maintenance Score': int((vehicle['car_age'] * 10 + 
+                                           (100 - vehicle['mileage']) * 2) / 3)
+                })
+            
+            # Display comparison results
+            results_df = pd.DataFrame(results)
+            st.subheader("Risk and Maintenance Comparison")
+            
+            fig_comparison = go.Figure(data=[
+                go.Bar(name='Risk Score', x=[f'Vehicle {i+1}' for i in range(num_vehicles)], 
+                      y=results_df['Risk Score']),
+                go.Bar(name='Maintenance Score', x=[f'Vehicle {i+1}' for i in range(num_vehicles)], 
+                      y=results_df['Maintenance Score'])
+            ])
+            fig_comparison.update_layout(barmode='group')
+            st.plotly_chart(fig_comparison)
 
 def show_maintenance_predictor():
-    st.title("Maintenance Predictor")
-    st.write("Maintenance prediction tools coming soon!")
+    st.title("Maintenance Prediction Tool")
+    
+    st.subheader("Vehicle Information")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        vehicle_age = st.number_input("Vehicle Age (years)", 0, 30, 5)
+        mileage = st.number_input("Current Mileage (km)", 0, 500000, 50000)
+        service_history = st.selectbox("Service History", 
+                                     ["Regular", "Irregular", "Unknown"])
+    
+    with col2:
+        usage_type = st.selectbox("Usage Type", 
+                                 ["Personal", "Commercial", "Mixed"])
+        driving_condition = st.selectbox("Driving Conditions",
+                                       ["City", "Highway", "Mixed"])
+        last_service = st.number_input("Months Since Last Service", 0, 60, 6)
+    
+    if st.button("Predict Maintenance Needs"):
+        # Calculate maintenance probability
+        base_score = min((vehicle_age * 10 + mileage/10000) / 2, 100)
+        
+        # Adjust for various factors
+        if service_history == "Irregular":
+            base_score += 15
+        elif service_history == "Unknown":
+            base_score += 10
+            
+        if usage_type == "Commercial":
+            base_score += 10
+        elif usage_type == "Mixed":
+            base_score += 5
+            
+        if driving_condition == "City":
+            base_score += 5
+        
+        if last_service > 12:
+            base_score += 15
+            
+        maintenance_score = min(base_score, 100)
+        
+        # Display results
+        st.header("Maintenance Assessment")
+        
+        # Maintenance Score Gauge
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=maintenance_score,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': "Maintenance Need Score"},
+            gauge={
+                'axis': {'range': [0, 100]},
+                'bar': {'color': "darkblue"},
+                'steps': [
+                    {'range': [0, 30], 'color': "green"},
+                    {'range': [30, 70], 'color': "yellow"},
+                    {'range': [70, 100], 'color': "red"}
+                ]
+            }
+        ))
+        st.plotly_chart(fig_gauge)
+        
+        # Maintenance Recommendations
+        st.subheader("Recommended Maintenance Schedule")
+        
+        if maintenance_score < 30:
+            st.success("Regular Maintenance Regime")
+            schedule = ["Oil change every 5,000 km",
+                       "Tire rotation every 10,000 km",
+                       "Annual general inspection"]
+        elif maintenance_score < 70:
+            st.warning("Enhanced Maintenance Regime")
+            schedule = ["Oil change every 3,000 km",
+                       "Tire rotation every 7,500 km",
+                       "Bi-annual general inspection",
+                       "Brake system check every 15,000 km"]
+        else:
+            st.error("Intensive Maintenance Regime")
+            schedule = ["Immediate full vehicle inspection",
+                       "Oil change every 2,500 km",
+                       "Monthly system checks",
+                       "Tire rotation every 5,000 km",
+                       "Quarterly general inspection"]
+        
+        for item in schedule:
+            st.write(f"- {item}")
 
 def show_insurance_calculator():
-    st.title("Insurance Calculator")
-    st.write("Insurance calculator tools coming soon!")
+    st.title("Insurance Premium Calculator")
+    
+    st.subheader("Risk Factors")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        age = st.number_input("Driver Age", 18, 100, 30)
+        vehicle_value = st.number_input("Vehicle Value ($)", 1000, 200000, 20000)
+        annual_mileage = st.number_input("Annual Mileage", 1000, 100000, 15000)
+        mvr_points = st.number_input("MVR Points", 0, 20, 0)
+    
+    with col2:
+        coverage_type = st.selectbox("Coverage Type", 
+                                   ["Basic", "Standard", "Premium"])
+        deductible = st.selectbox("Deductible ($)", 
+                                 [250, 500, 1000, 2000])
+        safety_features = st.multiselect("Safety Features",
+                                       ["ABS", "Airbags", "Parking Sensors", 
+                                        "Lane Departure Warning", "Automatic Emergency Braking"])
+    
+    if st.button("Calculate Premium"):
+        # Base premium calculation
+        base_premium = vehicle_value * 0.05  # 5% of vehicle value
+        
+        # Age factor
+        if age < 25:
+            age_factor = 1.3
+        elif age > 65:
+            age_factor = 1.2
+        else:
+            age_factor = 1.0
+            
+        # Mileage factor
+        mileage_factor = annual_mileage / 10000
+        
+        # MVR points factor
+        mvr_factor = 1 + (mvr_points * 0.1)
+        
+        # Coverage factor
+        coverage_factors = {
+            "Basic": 1.0,
+            "Standard": 1.2,
+            "Premium": 1.5
+        }
+        
+        # Deductible factor
+        deductible_factors = {
+            250: 1.2,
+            500: 1.1,
+            1000: 1.0,
+            2000: 0.9
+        }
+        
+        # Safety features discount
+        safety_discount = max(0.05, len(safety_features) * 0.02)
+        
+        # Calculate final premium
+        premium = (base_premium * age_factor * mileage_factor * mvr_factor * 
+                  coverage_factors[coverage_type] * deductible_factors[deductible] * 
+                  (1 - safety_discount))
+        
+        # Display results
+        st.header("Insurance Premium Breakdown")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Monthly Premium", f"${premium/12:.2f}")
+            st.metric("Annual Premium", f"${premium:.2f}")
+            
+        with col2:
+            st.metric("Coverage Type", coverage_type)
+            st.metric("Safety Discount", f"{safety_discount*100:.1f}%")
+        
+        # Premium Breakdown Chart
+        breakdown = {
+            'Base Premium': base_premium,
+            'Age Adjustment': (age_factor - 1) * base_premium,
+            'Mileage Adjustment': (mileage_factor - 1) * base_premium,
+            'MVR Points Impact': (mvr_factor - 1) * base_premium,
+            'Coverage Level': (coverage_factors[coverage_type] - 1) * base_premium,
+            'Safety Discount': -safety_discount * base_premium
+        }
+        
+        fig_breakdown = px.bar(
+            x=list(breakdown.keys()),
+            y=list(breakdown.values()),
+            title="Premium Adjustment Factors"
+        )
+        st.plotly_chart(fig_breakdown)
+        
+        # Recommendations
+        st.subheader("Ways to Reduce Premium")
+        recommendations = []
+        
+        if age < 25:
+            recommendations.append("Complete a defensive driving course")
+        if mvr_points > 0:
+            recommendations.append("Consider traffic school to reduce MVR points")
+        if len(safety_features) < 3:
+            recommendations.append("Install additional safety features")
+        if deductible < 1000:
+            recommendations.append("Consider a higher deductible to reduce premium")
+            
+        for rec in recommendations:
+            st.write(f"- {rec}")
 
 # --- MAIN PAGE LOGIC ---
 if selected_space == "Home":
