@@ -3246,6 +3246,7 @@ def show_correlation_analysis():
         target_corr = corr_matrix[target_var][valid_features].sort_values(ascending=False)
         st.dataframe(target_corr.round(3))
 
+
 def show_dimensionality_reduction():
     st.title("Dimensionality Reduction Analysis")
     
@@ -3273,127 +3274,156 @@ def show_dimensionality_reduction():
         'Vehicle_Age', 'Odometer_Reading', 'Fuel_Efficiency'
     ]
     
-    # Insurance Claims PCA
-    with domain_tab1:
-        st.subheader("Insurance Claims Domain PCA")
+    def create_pca_visualizations(data, features, domain_name):
+        """Create comprehensive PCA visualizations for a given feature set"""
+        # Standardize features
+        scaler = StandardScaler()
+        scaled_data = scaler.fit_transform(data[features])
         
-        # Filter valid features
-        valid_insurance = [f for f in insurance_features if f in balanced_data.columns]
+        # Apply PCA
+        pca = PCA()
+        transformed_data = pca.fit_transform(scaled_data)
         
-        if valid_insurance:
-            # Standardize features
-            scaler = StandardScaler()
-            insurance_scaled = scaler.fit_transform(balanced_data[valid_insurance])
-            
-            # Apply PCA
-            pca_insurance = PCA()
-            insurance_pca = pca_insurance.fit_transform(insurance_scaled)
-            
-            # Scree plot
-            exp_var_ratio = pca_insurance.explained_variance_ratio_
-            
-            fig_scree = go.Figure(data=[
-                go.Bar(
-                    x=[f"PC{i+1}" for i in range(len(exp_var_ratio))],
-                    y=exp_var_ratio,
-                    text=np.round(exp_var_ratio * 100, 1),
-                    textposition='auto'
-                )
-            ])
-            
-            fig_scree.update_layout(
-                title="Explained Variance Ratio by Principal Component",
-                xaxis_title="Principal Components",
-                yaxis_title="Explained Variance Ratio",
-                showlegend=False
-            )
-            
-            st.plotly_chart(fig_scree, use_container_width=True)
-            
-            # Feature contributions
-            loadings = pca_insurance.components_.T
-            pc_df = pd.DataFrame(
-                loadings,
-                columns=[f'PC{i+1}' for i in range(loadings.shape[1])],
-                index=valid_insurance
-            )
-            
-            fig_loadings = go.Figure(data=go.Heatmap(
-                z=loadings,
-                x=[f'PC{i+1}' for i in range(loadings.shape[1])],
-                y=valid_insurance,
+        # Create row for matrix visualizations
+        st.subheader(f"{domain_name} PCA Decomposition")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # U Matrix (Transformed Data Points)
+            fig_u = go.Figure(data=go.Heatmap(
+                z=transformed_data[:100, :4],  # First 100 samples, first 4 PCs
+                x=[f"PC{i+1}" for i in range(4)],
+                y=[f"Sample {i+1}" for i in range(100)],
                 colorscale='RdBu',
-                text=np.round(loadings, 3),
+                zmid=0
+            ))
+            fig_u.update_layout(
+                title="U Matrix<br>(Transformed Data Points)",
+                height=400,
+                xaxis_title="Principal Components",
+                yaxis_title="Samples"
+            )
+            st.plotly_chart(fig_u, use_container_width=True)
+        
+        with col2:
+            # Singular Values Matrix (Z Matrix)
+            singular_values = pca.singular_values_
+            z_matrix = np.zeros((len(singular_values), len(singular_values)))
+            np.fill_diagonal(z_matrix, singular_values)
+            
+            fig_z = go.Figure(data=go.Heatmap(
+                z=z_matrix[:4, :4],  # First 4 components
+                colorscale='Reds',
+                text=np.round(z_matrix[:4, :4], 1),
                 texttemplate='%{text}',
                 textfont={"size": 10}
             ))
-            
-            fig_loadings.update_layout(
-                title="Feature Loadings on Principal Components",
-                height=600
+            fig_z.update_layout(
+                title="Σ Matrix<br>(Singular Values)",
+                height=400
             )
-            
-            st.plotly_chart(fig_loadings, use_container_width=True)
-            
-            # 2D PCA plot with target variables
-            for target in ['CLAIM_FLAG', 'Need_Maintenance', 'is_claim']:
-                if target in balanced_data.columns:
-                    fig_2d = go.Figure()
-                    
-                    for class_val in [0, 1]:
-                        mask = balanced_data[target] == class_val
-                        fig_2d.add_trace(go.Scatter(
-                            x=insurance_pca[mask, 0],
-                            y=insurance_pca[mask, 1],
-                            mode='markers',
-                            name=f'{target}={class_val}',
-                            opacity=0.7
-                        ))
-                    
-                    fig_2d.update_layout(
-                        title=f"2D PCA Plot Colored by {target}",
-                        xaxis_title="First Principal Component",
-                        yaxis_title="Second Principal Component",
-                        height=500
-                    )
-                    
-                    st.plotly_chart(fig_2d, use_container_width=True)
+            st.plotly_chart(fig_z, use_container_width=True)
+        
+        with col3:
+            # VT Matrix (Feature Loadings)
+            loadings = pca.components_.T
+            fig_vt = go.Figure(data=go.Heatmap(
+                z=loadings[:, :4],  # First 4 components
+                x=[f"PC{i+1}" for i in range(4)],
+                y=features,
+                colorscale='RdBu',
+                zmid=0,
+                text=np.round(loadings[:, :4], 2),
+                texttemplate='%{text}',
+                textfont={"size": 10}
+            ))
+            fig_vt.update_layout(
+                title="V^T Matrix<br>(Feature Loadings)",
+                height=400
+            )
+            st.plotly_chart(fig_vt, use_container_width=True)
+        
+        # Create row for variance visualizations
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            # Singular Values Plot
+            fig_singular = go.Figure(data=go.Scatter(
+                x=list(range(1, len(singular_values) + 1)),
+                y=singular_values,
+                mode='lines+markers'
+            ))
+            fig_singular.update_layout(
+                title="Singular Values",
+                xaxis_title="Principal Component",
+                yaxis_title="Singular Value",
+                height=400
+            )
+            st.plotly_chart(fig_singular, use_container_width=True)
+        
+        with col2:
+            # Explained Variance Ratio
+            exp_var_ratio = pca.explained_variance_ratio_
+            fig_var_ratio = go.Figure(data=go.Bar(
+                x=[f"PC{i+1}" for i in range(len(exp_var_ratio))],
+                y=exp_var_ratio * 100,
+                text=np.round(exp_var_ratio * 100, 1),
+                textposition='auto'
+            ))
+            fig_var_ratio.update_layout(
+                title="Explained Variance Ratio",
+                xaxis_title="Principal Component",
+                yaxis_title="Explained Variance (%)",
+                height=400
+            )
+            st.plotly_chart(fig_var_ratio, use_container_width=True)
+        
+        with col3:
+            # Cumulative Explained Variance
+            cum_var_ratio = np.cumsum(exp_var_ratio)
+            fig_cum_var = go.Figure(data=go.Scatter(
+                x=list(range(1, len(cum_var_ratio) + 1)),
+                y=cum_var_ratio * 100,
+                mode='lines+markers',
+                text=np.round(cum_var_ratio * 100, 1),
+                textposition="top center"
+            ))
+            fig_cum_var.update_layout(
+                title="Cumulative Explained Variance",
+                xaxis_title="Number of Components",
+                yaxis_title="Cumulative Variance (%)",
+                height=400
+            )
+            st.plotly_chart(fig_cum_var, use_container_width=True)
+        
+        return pca, transformed_data
+    
+    # Insurance Claims PCA
+    with domain_tab1:
+        st.subheader("Insurance Claims Domain PCA")
+        valid_insurance = [f for f in insurance_features if f in balanced_data.columns]
+        if valid_insurance:
+            pca_ins, transformed_ins = create_pca_visualizations(
+                balanced_data, valid_insurance, "Insurance Claims"
+            )
     
     # Vehicle Features PCA
     with domain_tab2:
         st.subheader("Vehicle Features Domain PCA")
-        # [Similar implementation for vehicle features]
         valid_vehicle = [f for f in vehicle_features if f in balanced_data.columns]
-        
         if valid_vehicle:
-            # Standardize features
-            scaler = StandardScaler()
-            vehicle_scaled = scaler.fit_transform(balanced_data[valid_vehicle])
-            
-            # Apply PCA
-            pca_vehicle = PCA()
-            vehicle_pca = pca_vehicle.fit_transform(vehicle_scaled)
-            
-            # [Similar visualizations as insurance domain]
-            # Implementation continues...
+            pca_veh, transformed_veh = create_pca_visualizations(
+                balanced_data, valid_vehicle, "Vehicle Features"
+            )
     
     # Maintenance Data PCA
     with domain_tab3:
         st.subheader("Maintenance Data Domain PCA")
-        # [Similar implementation for maintenance features]
         valid_maintenance = [f for f in maintenance_features if f in balanced_data.columns]
-        
         if valid_maintenance:
-            # Standardize features
-            scaler = StandardScaler()
-            maintenance_scaled = scaler.fit_transform(balanced_data[valid_maintenance])
-            
-            # Apply PCA
-            pca_maintenance = PCA()
-            maintenance_pca = pca_maintenance.fit_transform(maintenance_scaled)
-            
-            # [Similar visualizations as insurance domain]
-            # Implementation continues...
+            pca_main, transformed_main = create_pca_visualizations(
+                balanced_data, valid_maintenance, "Maintenance Data"
+            )
     
     # Add insights section
     st.subheader("Key Dimensionality Reduction Insights")
