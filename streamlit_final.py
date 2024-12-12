@@ -3582,12 +3582,9 @@ def show_model_development():
         )
     }
     
-
-    # Model Training Tab
     with model_tab1:
         st.header("Model Training")
         
-        # Select target variable
         target = st.selectbox(
             "Select Target Variable",
             list(target_vars.keys()),
@@ -3641,7 +3638,7 @@ def show_model_development():
         with col2:
             st.write(f"Selected test size: {test_size*100}%")
         
-        # Cross-validation settings
+        # Implement stratified k-fold cross-validation
         n_splits = st.slider("Number of Cross-validation Folds", 3, 10, 5)
         cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
         
@@ -3651,11 +3648,11 @@ def show_model_development():
             list(models.keys()),
             default=['Logistic Regression', 'Random Forest']
         )
-        # Training button and logic
+        
         if st.button("Train Models"):
             results = {}
             
-            # Create final train-test split for evaluation
+            # Create train-test split
             X_train, X_test, y_train, y_test = train_test_split(
                 X_scaled, y, test_size=test_size, random_state=42, stratify=y
             )
@@ -3691,22 +3688,22 @@ def show_model_development():
                     
                     progress_bar.progress((fold + 1) / n_splits)
                 
-                # Final fit on full training data and evaluate on test set
+                # Fit on full training data and predict on test set
                 model.fit(X_train, y_train)
-                final_pred = model.predict(X_test)
-                final_pred_proba = model.predict_proba(X_test)[:, 1]
+                y_pred_test = model.predict(X_test)
+                y_pred_proba_test = model.predict_proba(X_test)[:, 1]
                 
                 # Store results
                 results[model_name] = {
+                    'accuracy': accuracy_score(y_test, y_pred_test),
+                    'precision': precision_score(y_test, y_pred_test),
+                    'recall': recall_score(y_test, y_pred_test),
+                    'f1': f1_score(y_test, y_pred_test),
+                    'roc_auc': roc_auc_score(y_test, y_pred_proba_test),
                     'cv_scores': cv_scores,
                     'model': model,
-                    'predictions': final_pred,
-                    'probabilities': final_pred_proba,
-                    'accuracy': accuracy_score(y_test, final_pred),
-                    'precision': precision_score(y_test, final_pred),
-                    'recall': recall_score(y_test, final_pred),
-                    'f1': f1_score(y_test, final_pred),
-                    'roc_auc': roc_auc_score(y_test, final_pred_proba)
+                    'predictions': y_pred_test,
+                    'probabilities': y_pred_proba_test
                 }
             
             # Store test data and results in session state
@@ -3721,8 +3718,14 @@ def show_model_development():
     with model_tab2:
         st.header("Model Evaluation")
         
-        if 'model_results' in st.session_state:
+        # Check if model results and test data exist in session state
+        if 'model_results' in st.session_state and 'test_data' in st.session_state:
             results = st.session_state['model_results']
+            test_data = st.session_state['test_data']
+            
+            # Retrieve y_test from stored test data
+            y_test = test_data['y_test']
+            valid_features = test_data['features']
             
             # Select model to evaluate
             model_to_evaluate = st.selectbox(
@@ -3793,10 +3796,13 @@ def show_model_development():
                     orientation='h'
                 )
                 st.plotly_chart(fig_imp)
+        else:
+            st.warning("Please train models first in the Model Training tab.")
 
     with model_tab3:
         st.header("Model Comparison")
         
+        # Check if model results exist in session state
         if 'model_results' in st.session_state:
             results = st.session_state['model_results']
             
@@ -3862,7 +3868,8 @@ def show_model_development():
                 title="Cross-validation Performance Variability"
             )
             st.plotly_chart(fig_cv_boxplot)
-
+        else:
+            st.warning("Please train models first in the Model Training tab.")
 
 # --- PRODUCTION SPACE PAGES ---
 def show_risk_assessment():
